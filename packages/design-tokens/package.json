@@ -1,0 +1,26 @@
+{
+  "name": "@tkf/design-tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design tokens for the Task Kanban Flow design system — generates CSS variables and TS constants.",
+  "type": "module",
+  "main": "./dist/tokens.js",
+  "types": "./dist/tokens.d.ts",
+  "exports": {
+    ".": "./dist/tokens.js",
+    "./styles": "./dist/tokens.css",
+    "./tokens.json": "./dist/tokens.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "tokens": "node scripts/build.mjs",
+    "build": "pnpm run tokens",
+    "lint": "echo 'no lint target for design-tokens'",
+    "clean": "rm -rf node_modules .turbo dist"
+  },
+  "devDependencies": {
+    "style-dictionary": "^4.3.2"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "color": {
+    "neutral": {
+      "0": { "value": "#ffffff", "description": "Pure white surface" },
+      "50": { "value": "#f8fafc" },
+      "100": { "value": "#f1f5f9" },
+      "200": { "value": "#e2e8f0" },
+      "300": { "value": "#cbd5e1" },
+      "400": { "value": "#94a3b8" },
+      "500": { "value": "#64748b" },
+      "600": { "value": "#475569" },
+      "700": { "value": "#334155" },
+      "800": { "value": "#1e293b" },
+      "900": { "value": "#0f172a" },
+      "950": { "value": "#020617" }
+    },
+    "brand": {
+      "50": { "value": "#eff6ff" },
+      "100": { "value": "#dbeafe" },
+      "500": { "value": "#3b82f6", "description": "Primary brand color" },
+      "600": { "value": "#2563eb" },
+      "700": { "value": "#1d4ed8" }
+    },
+    "semantic": {
+      "success": { "value": "#10b981" },
+      "warning": { "value": "#f59e0b" },
+      "danger": { "value": "#ef4444" },
+      "info": { "value": "#06b6d4" }
+    },
+    "background": {
+      "default": { "value": "{color.neutral.0}" },
+      "subtle": { "value": "{color.neutral.50}" },
+      "muted": { "value": "{color.neutral.100}" }
+    },
+    "foreground": {
+      "default": { "value": "{color.neutral.900}" },
+      "muted": { "value": "{color.neutral.500}" },
+      "subtle": { "value": "{color.neutral.400}" }
+    }
+  }
+}

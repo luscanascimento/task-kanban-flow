@@ -1,0 +1,14 @@
+{
+  "color": {
+    "background": {
+      "default": { "value": "{color.neutral.950}" },
+      "subtle": { "value": "{color.neutral.900}" },
+      "muted": { "value": "{color.neutral.800}" }
+    },
+    "foreground": {
+      "default": { "value": "{color.neutral.50}" },
+      "muted": { "value": "{color.neutral.400}" },
+      "subtle": { "value": "{color.neutral.500}" }
+    }
+  }
+}
