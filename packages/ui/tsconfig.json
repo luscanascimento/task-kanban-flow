@@ -1,0 +1,12 @@
+{
+  "extends": "@tkf/ts-config/angular.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": true,
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".storybook", "storybook-static"]
+}
