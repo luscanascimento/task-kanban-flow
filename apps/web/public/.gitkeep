@@ -1,0 +1,2 @@
+# Placeholder. The MSW worker script (`mockServiceWorker.js`) is generated
+# by `pnpm --filter @tkf/web exec msw init public/` — run once after install.

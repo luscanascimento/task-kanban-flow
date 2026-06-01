@@ -1,0 +1,34 @@
+/* Global styles for the Task Kanban Flow web app.
+   Component-scoped styles live next to their components. */
+
+:root {
+  color-scheme: light dark;
+  --tkf-app-shell-bg: var(--color-background-default);
+  --tkf-app-shell-fg: var(--color-foreground-default);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--font-line-height-normal);
+  background-color: var(--tkf-app-shell-bg);
+  color: var(--tkf-app-shell-fg);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--color-brand-600);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
