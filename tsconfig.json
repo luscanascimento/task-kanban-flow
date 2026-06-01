@@ -1,0 +1,20 @@
+{
+  "extends": "./packages/ts-config/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@tkf/ui": ["./packages/ui/src/index.ts"],
+      "@tkf/ui/*": ["./packages/ui/src/lib/*"],
+      "@tkf/api-client": ["./packages/api-client/src/index.ts"],
+      "@tkf/api-client/*": ["./packages/api-client/src/lib/*"],
+      "@tkf/shared-types": ["./packages/shared-types/src/index.ts"],
+      "@tkf/shared-types/*": ["./packages/shared-types/src/lib/*"],
+      "@tkf/shared-utils": ["./packages/shared-utils/src/index.ts"],
+      "@tkf/shared-utils/*": ["./packages/shared-utils/src/lib/*"],
+      "@tkf/design-tokens": ["./packages/design-tokens/dist/tokens.ts"]
+    }
+  },
+  "files": [],
+  "include": [],
+  "exclude": ["node_modules", "dist", ".angular", ".turbo"]
+}

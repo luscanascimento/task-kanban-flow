@@ -1,0 +1,52 @@
+{
+  "name": "task-kanban-flow",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enterprise-grade kanban task management platform built with Angular 21, Turborepo, and Clean Architecture.",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.2.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "e2e": "turbo run e2e",
+    "storybook": "turbo run storybook",
+    "build-storybook": "turbo run build-storybook",
+    "tokens": "turbo run tokens",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@tkf/eslint-config": "workspace:*",
+    "@tkf/ts-config": "workspace:*",
+    "eslint": "^9.18.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.4.2",
+    "turbo": "^2.9.16",
+    "typescript": "^5.6.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,scss,css,html,yaml,yml}": [
+      "prettier --write"
+    ]
+  }
+}
