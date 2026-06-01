@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: tkf/web:dev
+    ports: ['4200:80']
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    image: tkf/admin:dev
+    ports: ['4300:80']
+    restart: unless-stopped
