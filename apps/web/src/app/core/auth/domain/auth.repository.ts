@@ -1,6 +1,11 @@
 import { InjectionToken } from '@angular/core';
 
-import type { LoginRequestDto, LoginResponseDto, RefreshTokenRequestDto } from '@tkf/shared-types';
+import type {
+  LoginRequestDto,
+  LoginResponseDto,
+  RefreshTokenRequestDto,
+  RegisterRequestDto,
+} from '@tkf/shared-types';
 
 /**
  * Port (hexagonal architecture) for authentication operations.
@@ -10,6 +15,7 @@ import type { LoginRequestDto, LoginResponseDto, RefreshTokenRequestDto } from '
  */
 export interface AuthRepository {
   login(payload: LoginRequestDto): Promise<LoginResponseDto>;
+  register(payload: RegisterRequestDto): Promise<LoginResponseDto>;
   refresh(payload: RefreshTokenRequestDto): Promise<LoginResponseDto>;
   logout(): Promise<void>;
 }

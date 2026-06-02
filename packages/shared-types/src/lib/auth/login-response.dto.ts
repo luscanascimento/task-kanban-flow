@@ -11,3 +11,6 @@ export interface LoginResponseDto {
   readonly user: UserDto;
   readonly tokens: AuthTokensDto;
 }
+
+/** Registration returns the same shape as login (user + tokens for auto-login). */
+export type RegisterResponseDto = LoginResponseDto;

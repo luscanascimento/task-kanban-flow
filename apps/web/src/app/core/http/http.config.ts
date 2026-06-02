@@ -1,4 +1,5 @@
-import { type EnvironmentProviders, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { type EnvironmentProviders } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { authHttpInterceptor } from '../auth/infrastructure/auth-http.interceptor';
 

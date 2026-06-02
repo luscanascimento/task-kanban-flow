@@ -13,6 +13,10 @@ export const routes: Routes = [
     redirectTo: 'health',
   },
   {
+    path: 'auth',
+    loadChildren: () => import('./core/auth/routes/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
     path: 'health',
     loadChildren: () =>
       import('./features/health-check/routes/health-check.routes').then(

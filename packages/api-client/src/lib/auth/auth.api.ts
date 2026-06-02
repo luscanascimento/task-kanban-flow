@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 
-import type { LoginRequestDto, LoginResponseDto, RefreshTokenRequestDto } from '@tkf/shared-types';
+import type {
+  LoginRequestDto,
+  LoginResponseDto,
+  RefreshTokenRequestDto,
+  RegisterRequestDto,
+} from '@tkf/shared-types';
 
 import { BaseApiClient } from '../http/base-api.client';
 
@@ -17,6 +22,10 @@ export class AuthApi extends BaseApiClient {
 
   login(payload: LoginRequestDto): Promise<LoginResponseDto> {
     return this.post<LoginResponseDto>('/auth/login', payload);
+  }
+
+  register(payload: RegisterRequestDto): Promise<LoginResponseDto> {
+    return this.post<LoginResponseDto>('/auth/register', payload);
   }
 
   refresh(payload: RefreshTokenRequestDto): Promise<LoginResponseDto> {

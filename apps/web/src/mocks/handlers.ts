@@ -39,6 +39,36 @@ export const handlers = [
     });
   }),
 
+  http.post('*/auth/register', async ({ request }) => {
+    const body = (await request.json()) as { email: string; password: string; displayName: string };
+    if (!body.email || !body.password || !body.displayName) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          code: 'INVALID_INPUT',
+          message: 'Email, password, and displayName are required.',
+        },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json({
+      user: {
+        id: 'usr_' + Math.random().toString(36).slice(2, 8),
+        email: body.email,
+        displayName: body.displayName,
+        role: 'member',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      tokens: {
+        accessToken: 'mock.access.token',
+        refreshToken: 'mock.refresh.token',
+        accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+  }),
+
   http.post('*/auth/refresh', () =>
     HttpResponse.json({
       user: {

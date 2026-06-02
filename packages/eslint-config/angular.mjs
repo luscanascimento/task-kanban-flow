@@ -9,8 +9,15 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 export default tseslint.config(
   {
     files: ['**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: './tsconfig.app.json',
+      },
+    },
     plugins: {
       '@angular-eslint': angular,
+      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
       '@angular-eslint/component-class-suffix': 'error',
@@ -30,11 +37,6 @@ export default tseslint.config(
       '@angular-eslint/use-lifecycle-interface': 'error',
       '@angular-eslint/prefer-on-push-component-change-detection': 'error',
       '@angular-eslint/prefer-standalone': 'error',
-    },
-  },
-  {
-    files: ['**/*.ts'],
-    rules: {
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },

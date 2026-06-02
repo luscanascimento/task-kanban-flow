@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-import type { LoginRequestDto, LoginResponseDto, RefreshTokenRequestDto } from '@tkf/shared-types';
+import type {
+  LoginRequestDto,
+  LoginResponseDto,
+  RefreshTokenRequestDto,
+  RegisterRequestDto,
+} from '@tkf/shared-types';
 
 import { type AuthRepository } from '../domain/auth.repository';
 import { environment } from '../../../../environments/environment';
@@ -19,6 +24,12 @@ export class HttpAuthRepository implements AuthRepository {
 
   login(payload: LoginRequestDto): Promise<LoginResponseDto> {
     return firstValueFrom(this.http.post<LoginResponseDto>(`${this.baseUrl}/auth/login`, payload));
+  }
+
+  register(payload: RegisterRequestDto): Promise<LoginResponseDto> {
+    return firstValueFrom(
+      this.http.post<LoginResponseDto>(`${this.baseUrl}/auth/register`, payload),
+    );
   }
 
   refresh(payload: RefreshTokenRequestDto): Promise<LoginResponseDto> {

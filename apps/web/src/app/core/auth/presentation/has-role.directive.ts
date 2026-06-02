@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef, ViewContainerRef, inject, signal } from '@angular/core';
+import { Directive, Input, TemplateRef, ViewContainerRef, effect, inject } from '@angular/core';
 
 import type { UserRole } from '@tkf/shared-types';
 
@@ -10,8 +10,7 @@ import { AuthStore } from './auth-store';
  *
  *   <ng-container *tkfHasRole="['admin', 'manager']">…</ng-container>
  *
- * For the scaffolding phase the directive reads from `AuthStore` directly.
- * In Phase 1 we'll add reactive binding to route data + permission sets.
+ * Reactive: re-evaluates when `AuthStore.currentUser` changes.
  */
 @Directive({
   selector: '[tkfHasRole]',
@@ -22,16 +21,15 @@ export class HasRoleDirective {
   private readonly vcr = inject(ViewContainerRef);
   private readonly auth = inject(AuthStore);
 
-  private readonly requiredRoles = signal<ReadonlyArray<UserRole>>([]);
+  @Input() tkfHasRole: ReadonlyArray<UserRole> = [];
 
-  @Input() set tkfHasRole(roles: ReadonlyArray<UserRole>) {
-    this.requiredRoles.set(roles);
-    this.render();
+  constructor() {
+    effect(() => this.render());
   }
 
   private render(): void {
     const user = this.auth.currentUser();
-    if (user && this.requiredRoles().includes(user.role)) {
+    if (user && this.tkfHasRole.includes(user.role)) {
       this.vcr.createEmbeddedView(this.templateRef);
     } else {
       this.vcr.clear();
