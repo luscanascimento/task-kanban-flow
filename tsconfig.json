@@ -14,7 +14,5 @@
       "@tkf/design-tokens": ["./packages/design-tokens/dist/tokens.ts"]
     }
   },
-  "files": [],
-  "include": [],
   "exclude": ["node_modules", "dist", ".angular", ".turbo"]
 }
