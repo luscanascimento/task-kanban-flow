@@ -11,6 +11,7 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
+.playwright-mcp/
 
 # Cache
 .turbo/

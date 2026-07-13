@@ -1,6 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "outDir": "./dist/out-tsc/app", "types": [] },
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc/app",
+    // See apps/web/tsconfig.app.json: the base ts-config's `noEmit: true` breaks
+    // the Angular `application` builder's dev/source-map emit path. Apps must emit.
+    "noEmit": false,
+    "types": []
+  },
   "files": ["src/main.ts"],
   "include": ["src/**/*.d.ts", "src/**/*.ts"],
   "exclude": ["**/*.spec.ts", "e2e/**", "src/mocks/**/*.ts"]

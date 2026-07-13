@@ -1,24 +1,14 @@
 /** @type {import('jest').Config} */
+// The design-system package has no specs yet, so it uses the lightweight SWC
+// preset (fast, no Angular compiler). When component specs are added, switch to
+// jest-preset-angular's CJS preset like the apps do (see apps/web/jest.config.cjs).
 module.exports = {
-  preset: 'jest-preset-angular/presets/defaults-esm',
+  preset: '../../jest.preset.cjs',
   testEnvironment: 'jsdom',
   rootDir: '.',
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'html'],
-  globalSetup: 'jest-preset-angular/global-setup-esm',
-  transform: {
-    '^.+\\.(ts|js|html)$': [
-      'jest-preset-angular',
-      {
-        tsconfig: '<rootDir>/tsconfig.json',
-        stringifyContentPathRegex: '\\.(html|svg)$',
-        useESM: true,
-      },
-    ],
-  },
-  extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@tkf/(.*)$': '<rootDir>/../$1/src/index.ts',
   },
 };

@@ -5,6 +5,12 @@
     "composite": false,
     "declaration": false,
     "declarationMap": false,
+    // The base ts-config sets `noEmit: true` (correct for type-check-only library
+    // builds). The Angular `application` builder, however, switches to the ngtsc
+    // emit path whenever source maps are enabled (i.e. `ng serve` / dev builds);
+    // `noEmit: true` then blocks emission and the compiler reports every source
+    // file as "not found in TypeScript compilation". Apps must emit, so override it.
+    "noEmit": false,
     "types": []
   },
   "files": ["src/main.ts"],

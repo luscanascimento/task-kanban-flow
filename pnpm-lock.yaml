@@ -146,7 +146,7 @@ importers:
         version: 30.4.1
       jest-preset-angular:
         specifier: ^16.1.0
-        version: 16.1.5(8a4d974ca52333ff5cdcb3d042f8821f)
+        version: 16.1.5(6d445e0ac09c98e066b0f5a0d0524a2c)
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -156,6 +156,9 @@ importers:
       '@angular/animations':
         specifier: ^21.0.0
         version: 21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/cdk':
+        specifier: ^21.0.0
+        version: 21.2.14(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.15(@angular/animations@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@angular/common':
         specifier: ^21.0.0
         version: 21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
@@ -564,6 +567,14 @@ packages:
         optional: true
       vitest:
         optional: true
+
+  '@angular/cdk@21.2.14':
+    resolution: {integrity: sha512-806REq/CLf37nEhmmd8Q+ILN8z/RVG2vk2n8YZ/4TdHpcBCi5ux4AxLbpMmduLwGPOzPagJ6ggRzE5fnX0rmcQ==}
+    peerDependencies:
+      '@angular/common': ^21.0.0 || ^22.0.0
+      '@angular/core': ^21.0.0 || ^22.0.0
+      '@angular/platform-browser': ^21.0.0 || ^22.0.0
+      rxjs: ^6.5.3 || ^7.4.0
 
   '@angular/cli@21.2.13':
     resolution: {integrity: sha512-j1kOV/f0og/3xCwG7Y8RyPd6V7uYfX2NuvXbvN1mzgxLLN2mu6CTsvPg5l/9Pu9SJI3KOPRgDxWyuP3k8KuzMg==}
@@ -7432,6 +7443,15 @@ snapshots:
       - tsx
       - yaml
 
+  '@angular/cdk@21.2.14(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.15(@angular/animations@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)':
+    dependencies:
+      '@angular/common': 21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@angular/core': 21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/platform-browser': 21.2.15(@angular/animations@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))
+      parse5: 8.0.1
+      rxjs: 7.8.2
+      tslib: 2.8.1
+
   '@angular/cli@21.2.13(@types/node@22.19.19)(chokidar@5.0.0)':
     dependencies:
       '@angular-devkit/architect': 0.2102.13(chokidar@5.0.0)
@@ -7788,44 +7808,20 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.0
 
-  '@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.29.7)':
     dependencies:
@@ -7847,22 +7843,10 @@ snapshots:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.29.7)':
     dependencies:
@@ -7874,88 +7858,40 @@ snapshots:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
-
   '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.29.7
-    optional: true
 
   '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.29.7)':
     dependencies:
@@ -10668,20 +10604,6 @@ snapshots:
 
   axobject-query@4.1.0: {}
 
-  babel-jest@30.4.1(@babel/core@7.29.0):
-    dependencies:
-      '@babel/core': 7.29.0
-      '@jest/transform': 30.4.1
-      '@types/babel__core': 7.20.5
-      babel-plugin-istanbul: 7.0.1
-      babel-preset-jest: 30.4.0(@babel/core@7.29.0)
-      chalk: 4.1.2
-      graceful-fs: 4.2.11
-      slash: 3.0.0
-    transitivePeerDependencies:
-      - supports-color
-    optional: true
-
   babel-jest@30.4.1(@babel/core@7.29.7):
     dependencies:
       '@babel/core': 7.29.7
@@ -10747,26 +10669,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.0):
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/plugin-syntax-async-generators': 7.8.4(@babel/core@7.29.0)
-      '@babel/plugin-syntax-bigint': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-class-properties': 7.12.13(@babel/core@7.29.0)
-      '@babel/plugin-syntax-class-static-block': 7.14.5(@babel/core@7.29.0)
-      '@babel/plugin-syntax-import-attributes': 7.29.7(@babel/core@7.29.0)
-      '@babel/plugin-syntax-import-meta': 7.10.4(@babel/core@7.29.0)
-      '@babel/plugin-syntax-json-strings': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-logical-assignment-operators': 7.10.4(@babel/core@7.29.0)
-      '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-numeric-separator': 7.10.4(@babel/core@7.29.0)
-      '@babel/plugin-syntax-object-rest-spread': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-optional-catch-binding': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.29.0)
-      '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.0)
-      '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.0)
-    optional: true
-
   babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.7):
     dependencies:
       '@babel/core': 7.29.7
@@ -10785,13 +10687,6 @@ snapshots:
       '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.29.7)
       '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.7)
       '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.7)
-
-  babel-preset-jest@30.4.0(@babel/core@7.29.0):
-    dependencies:
-      '@babel/core': 7.29.0
-      babel-plugin-jest-hoist: 30.4.0
-      babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.0)
-    optional: true
 
   babel-preset-jest@30.4.0(@babel/core@7.29.7):
     dependencies:
@@ -12409,30 +12304,6 @@ snapshots:
       jsdom: 26.1.0
       pretty-format: 30.4.1
       ts-jest: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.0)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.19.19))(typescript@5.9.3)
-      typescript: 5.9.3
-    optionalDependencies:
-      esbuild: 0.28.0
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@jest/transform'
-      - '@jest/types'
-      - babel-jest
-      - canvas
-
-  jest-preset-angular@16.1.5(8a4d974ca52333ff5cdcb3d042f8821f):
-    dependencies:
-      '@angular/compiler-cli': 21.2.15(@angular/compiler@21.2.15)(typescript@5.9.3)
-      '@angular/core': 21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.15(@angular/animations@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))
-      '@angular/platform-browser-dynamic': 21.2.15(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/compiler@21.2.15)(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.15(@angular/animations@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.15(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.15(@angular/compiler@21.2.15)(rxjs@7.8.2)(zone.js@0.15.1)))
-      '@jest/environment-jsdom-abstract': 30.4.1(jsdom@26.1.0)
-      bs-logger: 0.2.6
-      esbuild-wasm: 0.28.0
-      jest: 30.4.2(@types/node@22.19.19)
-      jest-util: 30.4.1
-      jsdom: 26.1.0
-      pretty-format: 30.4.1
-      ts-jest: 29.4.11(@babel/core@7.29.0)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.0))(esbuild@0.28.0)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.19.19))(typescript@5.9.3)
       typescript: 5.9.3
     optionalDependencies:
       esbuild: 0.28.0
@@ -14153,7 +14024,7 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
-  terser-webpack-plugin@5.6.1(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12)(webpack@5.105.2(@swc/core@1.15.40)(postcss@8.5.12)):
+  terser-webpack-plugin@5.6.1(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12)(webpack@5.105.2(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -14247,27 +14118,6 @@ snapshots:
       typescript: 5.9.3
 
   ts-dedent@2.2.0: {}
-
-  ts-jest@29.4.11(@babel/core@7.29.0)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.0))(esbuild@0.28.0)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.19.19))(typescript@5.9.3):
-    dependencies:
-      bs-logger: 0.2.6
-      fast-json-stable-stringify: 2.1.0
-      handlebars: 4.7.9
-      jest: 30.4.2(@types/node@22.19.19)
-      json5: 2.2.3
-      lodash.memoize: 4.1.2
-      make-error: 1.3.6
-      semver: 7.8.1
-      type-fest: 4.41.0
-      typescript: 5.9.3
-      yargs-parser: 21.1.1
-    optionalDependencies:
-      '@babel/core': 7.29.0
-      '@jest/transform': 30.4.1
-      '@jest/types': 30.4.1
-      babel-jest: 30.4.1(@babel/core@7.29.0)
-      esbuild: 0.28.0
-      jest-util: 30.4.1
 
   ts-jest@29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.0)(jest-util@30.4.1)(jest@30.4.2(@types/node@22.19.19))(typescript@5.9.3):
     dependencies:
@@ -14583,7 +14433,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.1(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12)(webpack@5.105.2(@swc/core@1.15.40)(postcss@8.5.12))
+      terser-webpack-plugin: 5.6.1(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12)(webpack@5.105.2(@swc/core@1.15.40)(esbuild@0.27.3)(postcss@8.5.12))
       watchpack: 2.5.1
       webpack-sources: 3.5.0
     transitivePeerDependencies:
