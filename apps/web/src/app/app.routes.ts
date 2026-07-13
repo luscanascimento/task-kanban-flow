@@ -10,11 +10,25 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'health',
+    redirectTo: 'teams',
   },
   {
     path: 'auth',
     loadChildren: () => import('./core/auth/routes/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
+    path: 'teams',
+    loadChildren: () => import('./features/teams/routes/teams.routes').then((m) => m.TEAMS_ROUTES),
+  },
+  {
+    path: 'boards',
+    loadChildren: () =>
+      import('./features/boards/routes/boards.routes').then((m) => m.BOARDS_ROUTES),
+  },
+  {
+    path: 'clients',
+    loadChildren: () =>
+      import('./features/clients/routes/clients.routes').then((m) => m.CLIENTS_ROUTES),
   },
   {
     path: 'health',
@@ -25,6 +39,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'health',
+    redirectTo: 'teams',
   },
 ];

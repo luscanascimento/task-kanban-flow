@@ -1,8 +1,60 @@
 # Handoff — Fase 0 (Scaffolding) → Fase 1
 
-**Última atualização:** 2026-06-01
-**Branch:** `main` (pushed)
-**Commits:** 7 atômicos, todos pushed.
+**Última atualização:** 2026-07-13
+**Branch:** `main`
+
+---
+
+## 🟢 Atualização 2026-07-13 — Core Kanban entregue + blockers resolvidos
+
+### Blockers resolvidos
+
+- **`ng serve` (quebrado ~41 dias):** causa raiz era `noEmit: true` herdado de
+  `packages/ts-config/base.json`. O builder `application` do Angular usa o caminho de
+  _emit_ do ngtsc quando source maps estão ligados (dev/`ng serve`); `noEmit` bloqueia a
+  emissão → "File X not found in TypeScript compilation". **Fix:** `"noEmit": false` nos
+  `apps/{web,admin}/tsconfig.app.json`. Verificado (`ng serve` → HTTP 200, watch mode).
+- **Jest + Angular 21 zoneless:** Node < 24.9 não faz `require(ESM)`, então trocamos para
+  o preset **CJS** (`createCjsPreset`); e o TestBed é inicializado à mão em `jest.setup.ts`
+  via `getTestBed().initTestEnvironment(...)`. `pnpm test` → 35 unit tests passando.
+
+### Feature Kanban (`apps/web/src/app/features/boards/`)
+
+Clean Architecture completa (domain/application/infrastructure/presentation/routes),
+espelhando `auth`. Boards + Columns + Tasks com:
+
+- **Drag-and-drop** (`@angular/cdk`) entre colunas, com **update otimista + rollback** no facade.
+- WIP limits, prioridades, labels, checklist, assignee, due date, avatares de membros.
+- Diálogo de edição de tarefa (Angular 21 `linkedSignal`).
+- Backend mock **stateful** via MSW: `src/mocks/kanban.db.ts` + `kanban.handlers.ts`.
+- **Persistência de sessão:** `provideAuth()` usa `provideAppInitializer` p/ refresh silencioso no boot.
+- Shell com nav (Boards), toggle de tema e sign-out (ciente de auth).
+
+### Verificação (tudo verde)
+
+`pnpm build` 3/3 · `pnpm lint` 7/7 · `pnpm test` 5/5 (35 unit) · **6 e2e Playwright**
+(`apps/web/e2e/kanban.spec.ts`): login→boards, colunas, add card, drag Backlog→Done, editar.
+
+---
+
+## 🟢 Atualização 2026-07-13 (b) — Teams, Clients, Secrets e anexos
+
+- **Teams** (`features/teams/`): papéis owner/admin/member; membros do team enxergam todas as
+  boards do team; boards são criadas dentro do team. Gestão de membros (convidar por email,
+  trocar papel, remover). `BoardDto.teamId` adicionado.
+- **Clients** (`features/clients/`): cadastro global de clientes, atribuível a boards e tarefas
+  (`BoardDto.clientId`, `TaskDto.clientId`). Seletor de cliente no header da board e no diálogo
+  de tarefa; detalhe do cliente lista as boards atribuídas.
+- **Anexos de card ("prints")**: `TaskDto.attachments[]`; upload de imagem (FileReader → data URL),
+  miniatura no card e no diálogo, remoção. Endpoints `POST/DELETE /tasks/:id/attachments`.
+- **Cofre de Secrets por board**: `ProjectSecretDto` (plataforma, tipo de auth, credencial,
+  usuário, url, cliente). Mascarado por padrão com **revelar + copiar**. Board detail ganhou
+  abas **Board / 🔒 Secrets**. ⚠ No mock as secrets são texto puro — não é cofre de produção.
+- **DI central**: todas as portas de repositório são ligadas no app root via
+  `core/data/data.config.ts` (`provideKanbanData()`); stores/facades continuam com escopo de rota.
+- Rota padrão → `/teams`. Navegação: Teams / Boards / Clients.
+- **Verificação**: build 3/3 · lint 7/7 · 35 unit · **12 e2e** (`kanban`, `teams-clients`, `smoke`),
+  incluindo teste de regressão para o match ganancioso do MSW (`*/boards` vs `/teams/:id/boards`).
 
 ---
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test('health check route renders', async ({ page }) => {
+test('unauthenticated root redirects to the login page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /task kanban flow/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/auth\/login$/);
+  await expect(page.getByRole('heading', { name: /entrar/i })).toBeVisible();
 });

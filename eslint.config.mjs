@@ -17,6 +17,9 @@ export default [
       '**/node_modules/**',
       'packages/design-tokens/dist/**',
       'apps/*/public/mockServiceWorker.js',
+      // MSW mock backends are dev-only seed/fixtures; they're already excluded by
+      // each app's ESLint config, mirror that here so lint-staged agrees.
+      'apps/*/src/mocks/**',
       '**/*.tsbuildinfo',
     ],
   },

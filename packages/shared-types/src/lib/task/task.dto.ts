@@ -18,10 +18,23 @@ export interface TaskDto {
   readonly dueDate?: string;
   readonly labels: ReadonlyArray<TaskLabelDto>;
   readonly checklistItems: ReadonlyArray<TaskChecklistItemDto>;
+  readonly attachments: ReadonlyArray<TaskAttachmentDto>;
+  /** Optional client this task is for. */
+  readonly clientId?: string;
   readonly commentCount: number;
   readonly attachmentCount: number;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+export interface TaskAttachmentDto {
+  readonly id: string;
+  readonly name: string;
+  readonly mimeType: string;
+  /** Data URL (mock) or object-storage URL (production) of the file. */
+  readonly url: string;
+  readonly sizeBytes: number;
+  readonly createdAt: string;
 }
 
 export interface TaskLabelDto {
@@ -44,6 +57,7 @@ export interface CreateTaskRequestDto {
   readonly priority: TaskPriority;
   readonly assigneeId?: string;
   readonly dueDate?: string;
+  readonly clientId?: string;
 }
 
 export interface UpdateTaskRequestDto {
@@ -55,6 +69,14 @@ export interface UpdateTaskRequestDto {
   readonly position?: number;
   readonly assigneeId?: string | null;
   readonly dueDate?: string | null;
+  readonly clientId?: string | null;
+}
+
+export interface AddTaskAttachmentRequestDto {
+  readonly name: string;
+  readonly mimeType: string;
+  readonly url: string;
+  readonly sizeBytes: number;
 }
 
 export interface MoveTaskRequestDto {

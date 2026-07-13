@@ -1,8 +1,11 @@
 import { http, HttpResponse } from 'msw';
 
+import { kanbanHandlers } from './kanban.handlers';
+
 /**
  * MSW request handlers. Mirror the contracts in @tkf/shared-types.
- * The scaffolding phase ships only `/health` and stub auth endpoints.
+ * Composes the health/auth stubs with the stateful kanban backend
+ * (`kanbanHandlers`), which serves boards, columns and tasks.
  */
 export const handlers = [
   http.get('*/health', () =>
@@ -89,4 +92,6 @@ export const handlers = [
   ),
 
   http.post('*/auth/logout', () => new HttpResponse(null, { status: 204 })),
+
+  ...kanbanHandlers,
 ];

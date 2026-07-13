@@ -4,6 +4,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
 import { provideAuth } from './core/auth/auth.config';
+import { provideKanbanData } from './core/data/data.config';
 import { provideHttp } from './core/http/http.config';
 import { provideSentry } from './core/sentry/sentry.config';
 import { provideTheme } from './core/theme/theme.config';
@@ -16,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
     provideHttp(),
     provideAuth(),
+    provideKanbanData(),
     provideTheme(),
     provideSentry(),
   ],
