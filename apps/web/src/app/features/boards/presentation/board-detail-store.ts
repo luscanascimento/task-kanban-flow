@@ -1,7 +1,7 @@
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import type { BoardDto, ClientDto, ColumnDto, TaskDto } from '@tkf/shared-types';
+import type { BoardDto, ClientDto, ColumnDto, TaskDto, TaskPriority } from '@tkf/shared-types';
 
 import { moveTask } from '../domain/task-ordering';
 
@@ -20,6 +20,10 @@ interface BoardDetailState {
   clients: ReadonlyArray<ClientDto>;
   isLoading: boolean;
   error: string | null;
+  /** Free-text filter over task title/description. */
+  searchQuery: string;
+  /** Optional priority filter; null means "any". */
+  priorityFilter: TaskPriority | null;
 }
 
 const initialState: BoardDetailState = {
@@ -29,6 +33,8 @@ const initialState: BoardDetailState = {
   clients: [],
   isLoading: false,
   error: null,
+  searchQuery: '',
+  priorityFilter: null,
 };
 
 const byPosition = <T extends { position: number }>(a: T, b: T): number => a.position - b.position;
@@ -61,7 +67,45 @@ export const BoardDetailStore = signalStore(
     taskCount: computed(() => tasks().length),
     isEmpty: computed(() => board() !== null && columns().length === 0),
   })),
+  // A second computed layer that derives the filtered view from the grouped
+  // columns above plus the search/priority filters.
+  withComputed(({ columnsWithTasks, searchQuery, priorityFilter }) => {
+    const hasActiveFilters = computed(
+      () => searchQuery().trim().length > 0 || priorityFilter() !== null,
+    );
+    const filteredColumnsWithTasks = computed<ReadonlyArray<ColumnWithTasks>>(() => {
+      const query = searchQuery().trim().toLowerCase();
+      const priority = priorityFilter();
+      if (!query && !priority) return columnsWithTasks();
+      return columnsWithTasks().map((group) => ({
+        ...group,
+        tasks: group.tasks.filter(
+          (t) =>
+            (!priority || t.priority === priority) &&
+            (!query ||
+              t.title.toLowerCase().includes(query) ||
+              (t.description ?? '').toLowerCase().includes(query)),
+        ),
+      }));
+    });
+    return {
+      hasActiveFilters,
+      filteredColumnsWithTasks,
+      filteredTaskCount: computed(() =>
+        filteredColumnsWithTasks().reduce((sum, g) => sum + g.tasks.length, 0),
+      ),
+    };
+  }),
   withMethods((store) => ({
+    setSearchQuery(searchQuery: string): void {
+      patchState(store, { searchQuery });
+    },
+    setPriorityFilter(priorityFilter: TaskPriority | null): void {
+      patchState(store, { priorityFilter });
+    },
+    clearFilters(): void {
+      patchState(store, { searchQuery: '', priorityFilter: null });
+    },
     setBoard(board: BoardDto): void {
       patchState(store, { board });
     },

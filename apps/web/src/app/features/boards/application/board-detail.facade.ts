@@ -5,6 +5,7 @@ import type {
   AddTaskAttachmentRequestDto,
   CreateColumnRequestDto,
   CreateTaskRequestDto,
+  TaskPriority,
   UpdateColumnRequestDto,
   UpdateTaskRequestDto,
 } from '@tkf/shared-types';
@@ -32,12 +33,29 @@ export class BoardDetailFacade {
   readonly board = this.store.board;
   readonly allTasks = this.store.tasks;
   readonly columnsWithTasks = this.store.columnsWithTasks;
+  readonly filteredColumnsWithTasks = this.store.filteredColumnsWithTasks;
   readonly orderedColumns = this.store.orderedColumns;
   readonly clients = this.store.clients;
   readonly boardClient = this.store.boardClient;
   readonly isLoading = this.store.isLoading;
   readonly error = this.store.error;
   readonly taskCount = this.store.taskCount;
+  readonly filteredTaskCount = this.store.filteredTaskCount;
+  readonly hasActiveFilters = this.store.hasActiveFilters;
+  readonly searchQuery = this.store.searchQuery;
+  readonly priorityFilter = this.store.priorityFilter;
+
+  setSearchQuery(query: string): void {
+    this.store.setSearchQuery(query);
+  }
+
+  setPriorityFilter(priority: TaskPriority | null): void {
+    this.store.setPriorityFilter(priority);
+  }
+
+  clearFilters(): void {
+    this.store.clearFilters();
+  }
 
   /** Load the board with its columns, tasks and the client picker list. */
   async load(boardId: string): Promise<void> {

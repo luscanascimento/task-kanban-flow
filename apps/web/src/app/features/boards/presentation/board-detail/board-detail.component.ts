@@ -17,13 +17,22 @@ import {
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
 
-import { AvatarComponent, ButtonComponent, LoadingComponent } from '@tkf/ui';
+import {
+  AvatarComponent,
+  ButtonComponent,
+  InputComponent,
+  LoadingComponent,
+  SelectComponent,
+} from '@tkf/ui';
 import type {
   AddTaskAttachmentRequestDto,
   ColumnDto,
   TaskDto,
+  TaskPriority,
   UpdateTaskRequestDto,
 } from '@tkf/shared-types';
+
+const PRIORITIES: ReadonlyArray<TaskPriority> = ['urgent', 'high', 'medium', 'low', 'lowest'];
 
 import { BoardDetailFacade } from '../../application/board-detail.facade';
 import { ColumnComponent } from './column.component';
@@ -53,6 +62,8 @@ type BoardTab = 'board' | 'secrets';
     SecretsPanelComponent,
     AvatarComponent,
     ButtonComponent,
+    InputComponent,
+    SelectComponent,
     LoadingComponent,
   ],
   template: `
@@ -131,6 +142,41 @@ type BoardTab = 'board' | 'secrets';
           <tkf-secrets-panel [boardId]="boardId()" [clients]="facade.clients()" />
         </div>
       } @else {
+        <div class="board__filters">
+          <input
+            tkf-input
+            class="board__search"
+            type="search"
+            [ngModel]="facade.searchQuery()"
+            (ngModelChange)="facade.setSearchQuery($event)"
+            placeholder="Search cards…"
+            i18n-placeholder
+            aria-label="Search cards"
+            i18n-aria-label
+          />
+          <select
+            tkf-select
+            class="board__priority-filter"
+            [ngModel]="facade.priorityFilter() ?? ''"
+            (ngModelChange)="onPriorityFilter($event)"
+            aria-label="Filter by priority"
+            i18n-aria-label
+          >
+            <option value="" i18n>All priorities</option>
+            @for (p of priorities; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+          @if (facade.hasActiveFilters()) {
+            <span class="board__filter-count"
+              >{{ facade.filteredTaskCount() }} <ng-container i18n>of</ng-container>
+              {{ facade.taskCount() }}</span
+            >
+            <button type="button" class="board__filter-clear" (click)="facade.clearFilters()" i18n>
+              Clear
+            </button>
+          }
+        </div>
         <div
           class="board__columns"
           cdkDropListGroup
@@ -140,7 +186,7 @@ type BoardTab = 'board' | 'secrets';
           [cdkDropListEnterPredicate]="acceptColumns"
           (cdkDropListDropped)="onColumnDrop($event)"
         >
-          @for (group of facade.columnsWithTasks(); track group.column.id) {
+          @for (group of facade.filteredColumnsWithTasks(); track group.column.id) {
             <div class="board__column-wrap" cdkDrag [cdkDragData]="group.column">
               <tkf-column
                 [data]="group"
@@ -310,6 +356,30 @@ type BoardTab = 'board' | 'secrets';
         color: var(--color-foreground-muted);
         padding: var(--spacing-8);
       }
+      .board__filters {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+      }
+      .board__search {
+        max-width: 280px;
+      }
+      .board__priority-filter {
+        max-width: 180px;
+        text-transform: capitalize;
+      }
+      .board__filter-count {
+        font-size: var(--font-size-sm);
+        color: var(--color-foreground-muted);
+      }
+      .board__filter-clear {
+        border: none;
+        background: transparent;
+        color: var(--color-brand-600);
+        cursor: pointer;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+      }
       .board__columns {
         display: flex;
         gap: var(--spacing-4);
@@ -395,6 +465,12 @@ export class BoardDetailComponent {
     if (sameSpot) return;
     const task = event.item.data as TaskDto;
     void this.facade.moveTask(task.id, event.container.id, event.currentIndex);
+  }
+
+  readonly priorities = PRIORITIES;
+
+  onPriorityFilter(value: string): void {
+    this.facade.setPriorityFilter(value === '' ? null : (value as TaskPriority));
   }
 
   onColumnDrop(event: CdkDragDrop<ReadonlyArray<ColumnDto>>): void {
