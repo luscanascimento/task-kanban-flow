@@ -1,31 +1,29 @@
-import { ChangeDetectionStrategy, Component, forwardRef, Input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Input,
+  forwardRef,
+  inject,
+} from '@angular/core';
 import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-export type InputVariant = 'outlined' | 'filled';
-
 /**
- * tkf-input — base input of the design system.
- * Implements `ControlValueAccessor` for seamless Reactive Forms integration.
+ * tkf-textarea — design-system styled `<textarea>` with a ControlValueAccessor
+ * for Reactive Forms / ngModel. Mirrors tkf-input.
  *
- * Usage: `<input tkf-input formControlName="email" type="email" label="Email" />`
+ * Usage: `<textarea tkf-textarea formControlName="description" rows="4"></textarea>`
  */
 @Component({
-  selector: 'input[tkf-input]',
+  selector: 'textarea[tkf-textarea]',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => InputComponent),
-      multi: true,
-    },
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TextareaComponent), multi: true },
   ],
   host: {
-    '[attr.data-variant]': 'variant',
     '[attr.data-invalid]': 'invalid || null',
     '[attr.aria-invalid]': 'invalid || null',
-    '[attr.aria-label]': 'label',
-    '[attr.aria-describedby]': 'describedBy || null',
     '(input)': 'onInput($event)',
     '(blur)': 'onTouched()',
   },
@@ -43,6 +41,8 @@ export type InputVariant = 'outlined' | 'filled';
         line-height: var(--font-line-height-normal);
         color: var(--color-foreground-default);
         background: var(--color-background-default);
+        resize: vertical;
+        min-height: 4rem;
         transition:
           border-color 120ms ease,
           box-shadow 120ms ease;
@@ -55,19 +55,6 @@ export type InputVariant = 'outlined' | 'filled';
       :host[data-invalid] {
         border-color: var(--color-semantic-danger);
       }
-      :host[data-invalid]:focus {
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-semantic-danger) 25%, transparent);
-      }
-      :host[data-variant='filled'] {
-        background: var(--color-background-subtle);
-        border-color: transparent;
-      }
-      :host[data-variant='filled']:focus {
-        border-color: var(--color-brand-500);
-      }
-      :host::placeholder {
-        color: var(--color-neutral-400);
-      }
       :host:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -75,29 +62,26 @@ export type InputVariant = 'outlined' | 'filled';
     `,
   ],
 })
-export class InputComponent implements ControlValueAccessor {
-  @Input() variant: InputVariant = 'outlined';
-  @Input() label = '';
+export class TextareaComponent implements ControlValueAccessor {
   @Input() invalid = false;
-  /** id(s) of the element(s) describing this input (e.g. an error message). */
-  @Input() describedBy = '';
 
+  private readonly el = inject<ElementRef<HTMLTextAreaElement>>(ElementRef);
   private onChange: (value: string) => void = () => {};
   protected onTouched: () => void = () => {};
 
-  writeValue(): void {
-    // Native input value is managed by the host element; no-op here.
+  writeValue(value: string | null): void {
+    this.el.nativeElement.value = value ?? '';
   }
-
   registerOnChange(fn: (value: string) => void): void {
     this.onChange = fn;
   }
-
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
   }
-
+  setDisabledState(isDisabled: boolean): void {
+    this.el.nativeElement.disabled = isDisabled;
+  }
   onInput(event: Event): void {
-    this.onChange((event.target as HTMLInputElement).value);
+    this.onChange((event.target as HTMLTextAreaElement).value);
   }
 }

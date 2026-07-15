@@ -1,9 +1,6 @@
-/** Two-letter uppercase initials from a display name, e.g. "Ana Souza" → "AS". */
-export function initials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part.charAt(0))
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
+/**
+ * Re-exported from `@tkf/shared-utils` so existing imports keep working while
+ * the single implementation lives in the shared package (also used by
+ * `tkf-avatar` in the design system).
+ */
+export { initials } from '@tkf/shared-utils';

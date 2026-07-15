@@ -18,6 +18,10 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
   host: {
     '[attr.data-variant]': 'variant',
     '[attr.data-disabled]': 'disabled || null',
+    // Reflect to the native disabled attribute so the button is genuinely
+    // inert (unfocusable, unclickable) rather than only visually dimmed.
+    '[attr.disabled]': 'disabled || null',
+    '[attr.aria-disabled]': 'disabled || null',
   },
   template: '<ng-content />',
   styles: [
@@ -61,6 +65,10 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
       }
       :host:hover:not([data-disabled]) {
         filter: brightness(0.95);
+      }
+      :host:focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
       }
     `,
   ],
