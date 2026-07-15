@@ -13,7 +13,7 @@
 ## Stack
 
 | Layer         | Choice                                                                                               |
-| ------------- | ---------------------------------------------------------------------------------------------------- | ------- | ------ | -------- |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
 | Framework     | Angular **21** (standalone components, signals, zoneless)                                            |
 | State         | [`@ngrx/signals`](https://ngrx.io/guide/signals) per feature                                         |
 | Routing       | Angular Router (lazy-loaded, view transitions)                                                       |
@@ -34,7 +34,7 @@
 | Containers    | Multi-stage Dockerfile → nginx-alpine                                                                |
 | CI/CD         | GitHub Actions (pnpm cache + Turbo cache)                                                            |
 | Observability | Sentry SDK wired (DSN-gated)                                                                         |
-| Security      | JWT + refresh + RBAC (`admin                                                                         | manager | member | viewer`) |
+| Security      | JWT + refresh + RBAC (`admin` / `manager` / `member` / `viewer`)                                     |
 
 ---
 
