@@ -9,10 +9,21 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { type CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  type CdkDragDrop,
+  CdkDropList,
+  CdkDropListGroup,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 
 import { AvatarComponent, ButtonComponent, LoadingComponent } from '@tkf/ui';
-import type { AddTaskAttachmentRequestDto, TaskDto, UpdateTaskRequestDto } from '@tkf/shared-types';
+import type {
+  AddTaskAttachmentRequestDto,
+  ColumnDto,
+  TaskDto,
+  UpdateTaskRequestDto,
+} from '@tkf/shared-types';
 
 import { BoardDetailFacade } from '../../application/board-detail.facade';
 import { ColumnComponent } from './column.component';
@@ -35,6 +46,8 @@ type BoardTab = 'board' | 'secrets';
     FormsModule,
     RouterLink,
     CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
     ColumnComponent,
     TaskDialogComponent,
     SecretsPanelComponent,
@@ -118,16 +131,27 @@ type BoardTab = 'board' | 'secrets';
           <tkf-secrets-panel [boardId]="boardId()" [clients]="facade.clients()" />
         </div>
       } @else {
-        <div class="board__columns" cdkDropListGroup>
+        <div
+          class="board__columns"
+          cdkDropListGroup
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          [cdkDropListData]="facade.orderedColumns()"
+          [cdkDropListEnterPredicate]="acceptColumns"
+          (cdkDropListDropped)="onColumnDrop($event)"
+        >
           @for (group of facade.columnsWithTasks(); track group.column.id) {
-            <tkf-column
-              [data]="group"
-              (addTask)="onAddTask(group.column.id, $event)"
-              (editTask)="openTask($event)"
-              (deleteTask)="onDeleteTask($event)"
-              (deleteColumn)="onDeleteColumn($event)"
-              (dropped)="onDrop($event)"
-            />
+            <div class="board__column-wrap" cdkDrag [cdkDragData]="group.column">
+              <tkf-column
+                [data]="group"
+                [dropPredicate]="acceptTasks"
+                (addTask)="onAddTask(group.column.id, $event)"
+                (editTask)="openTask($event)"
+                (deleteTask)="onDeleteTask($event)"
+                (deleteColumn)="onDeleteColumn($event)"
+                (dropped)="onDrop($event)"
+              />
+            </div>
           }
 
           <div class="board__add-column">
@@ -295,8 +319,14 @@ type BoardTab = 'board' | 'secrets';
         flex: 1;
         min-height: 0;
       }
-      .board__columns > tkf-column {
+      .board__column-wrap {
         height: 100%;
+      }
+      .board__column-wrap.cdk-drag-preview {
+        box-shadow: var(--shadow-xl);
+      }
+      .board__columns.cdk-drop-list-dragging .board__column-wrap:not(.cdk-drag-placeholder) {
+        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
       }
       .board__add-column {
         flex: 0 0 auto;
@@ -366,6 +396,19 @@ export class BoardDetailComponent {
     const task = event.item.data as TaskDto;
     void this.facade.moveTask(task.id, event.container.id, event.currentIndex);
   }
+
+  onColumnDrop(event: CdkDragDrop<ReadonlyArray<ColumnDto>>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const ids = this.facade.orderedColumns().map((c) => c.id);
+    moveItemInArray(ids, event.previousIndex, event.currentIndex);
+    void this.facade.reorderColumns(ids);
+  }
+
+  /** Only columns (no `columnId`) may enter the horizontal column list. */
+  readonly acceptColumns = (drag: CdkDrag): boolean =>
+    !('columnId' in ((drag.data ?? {}) as object));
+  /** Only tasks (which carry a `columnId`) may enter a card list. */
+  readonly acceptTasks = (drag: CdkDrag): boolean => 'columnId' in ((drag.data ?? {}) as object);
 
   onAddTask(columnId: string, title: string): void {
     void this.facade.createTask({

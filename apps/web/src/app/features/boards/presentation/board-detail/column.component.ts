@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CdkDrag, type CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDrag, type CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 
 import { ButtonComponent } from '@tkf/ui';
 import type { TaskDto } from '@tkf/shared-types';
@@ -18,11 +18,19 @@ import { TaskCardComponent } from './task-card.component';
   selector: 'tkf-column',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, CdkDropList, CdkDrag, TaskCardComponent, ButtonComponent],
+  imports: [FormsModule, CdkDropList, CdkDrag, CdkDragHandle, TaskCardComponent, ButtonComponent],
   host: { '[class.column--over-wip]': 'data().isOverWipLimit' },
   template: `
     <div class="column">
       <header class="column__header">
+        <span
+          class="column__grip"
+          cdkDragHandle
+          aria-label="Drag to reorder column"
+          i18n-aria-label
+          title="Drag to reorder"
+          >⋮⋮</span
+        >
         <span
           class="column__dot"
           [style.background]="data().column.color || 'var(--color-neutral-400)'"
@@ -50,6 +58,7 @@ import { TaskCardComponent } from './task-card.component';
         cdkDropList
         [id]="data().column.id"
         [cdkDropListData]="data().tasks"
+        [cdkDropListEnterPredicate]="dropPredicate()"
         (cdkDropListDropped)="dropped.emit($event)"
       >
         @for (task of data().tasks; track task.id) {
@@ -115,11 +124,26 @@ import { TaskCardComponent } from './task-card.component';
         gap: var(--spacing-2);
         padding: var(--spacing-2);
       }
+      .column__grip {
+        cursor: grab;
+        color: var(--color-foreground-subtle);
+        font-size: var(--font-size-sm);
+        line-height: 1;
+        letter-spacing: -2px;
+        user-select: none;
+        padding-right: 2px;
+      }
+      .column__grip:active {
+        cursor: grabbing;
+      }
       .column__dot {
         width: 10px;
         height: 10px;
         border-radius: var(--radius-full);
         flex-shrink: 0;
+      }
+      .cdk-drag-preview .column {
+        box-shadow: var(--shadow-xl);
       }
       .column__title {
         margin: 0;
@@ -231,6 +255,9 @@ import { TaskCardComponent } from './task-card.component';
 })
 export class ColumnComponent {
   readonly data = input.required<ColumnWithTasks>();
+  /** Predicate deciding whether a dragged item may enter this task list
+   * (used to keep column drags out of the card lists). */
+  readonly dropPredicate = input<(drag: CdkDrag) => boolean>(() => true);
 
   readonly addTask = output<string>();
   readonly editTask = output<TaskDto>();

@@ -148,6 +148,23 @@ export class BoardDetailFacade {
     const position = this.orderedColumns().length;
     return this.createColumn({ boardId, title, position });
   }
+
+  /**
+   * Reorder columns via drag-and-drop. Optimistically applies the new order,
+   * then persists the whole ordering; rolls back on failure — the same
+   * snapshot/restore discipline as {@link moveTask}.
+   */
+  async reorderColumns(orderedColumnIds: ReadonlyArray<string>): Promise<void> {
+    const boardId = this.store.board()?.id;
+    if (!boardId) return;
+    const snapshot = this.store.applyColumnReorder(orderedColumnIds);
+    try {
+      this.store.setColumns(await this.columns.reorder(boardId, orderedColumnIds));
+    } catch (e) {
+      this.store.restoreColumns(snapshot);
+      this.toast.error(toMessage(e, 'Failed to reorder columns.'));
+    }
+  }
 }
 
 function toMessage(e: unknown, fallback: string): string {
