@@ -23,7 +23,15 @@ const PRIORITY_META: Record<TaskPriority, { label: string; variant: BadgeVariant
   imports: [AvatarComponent, BadgeComponent],
   host: { '[attr.data-priority]': 'task().priority' },
   template: `
-    <article class="card" (click)="edit.emit(task())">
+    <article
+      class="card"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Edit task: ' + task().title"
+      (click)="edit.emit(task())"
+      (keydown.enter)="activate($event)"
+      (keydown.space)="activate($event)"
+    >
       <header class="card__top">
         <tkf-badge [variant]="priorityVariant()" size="sm">{{ priorityLabel() }}</tkf-badge>
         <button
@@ -108,6 +116,10 @@ const PRIORITY_META: Record<TaskPriority, { label: string; variant: BadgeVariant
         border-color: var(--color-brand-500);
         box-shadow: var(--shadow-md);
       }
+      .card:focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+      }
       .card__top {
         display: flex;
         align-items: center;
@@ -130,7 +142,9 @@ const PRIORITY_META: Record<TaskPriority, { label: string; variant: BadgeVariant
           background 120ms ease,
           color 120ms ease;
       }
-      .card:hover .card__delete {
+      .card:hover .card__delete,
+      .card:focus-within .card__delete,
+      .card__delete:focus-visible {
         opacity: 1;
       }
       .card__delete:hover {
@@ -237,5 +251,11 @@ export class TaskCardComponent {
   onDelete(event: Event): void {
     event.stopPropagation();
     this.delete.emit(this.task());
+  }
+
+  /** Keyboard activation (Enter/Space) opens the task, mirroring a click. */
+  activate(event: Event): void {
+    event.preventDefault();
+    this.edit.emit(this.task());
   }
 }

@@ -242,7 +242,9 @@ import { initials } from '../../../../shared/util/initials';
         cursor: pointer;
         opacity: 0;
       }
-      .card:hover .del {
+      .card:hover .del,
+      .card:focus-within .del,
+      .del:focus-visible {
         opacity: 1;
       }
       .del:hover {

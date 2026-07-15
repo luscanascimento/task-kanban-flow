@@ -29,9 +29,12 @@ import { AuthStore } from '../auth-store';
             formControlName="displayName"
             placeholder="Seu nome"
             [invalid]="displayNameInvalid"
+            [describedBy]="displayNameInvalid ? 'register-name-error' : ''"
           />
           @if (displayNameInvalid) {
-            <span class="tkf-auth-card__hint">Mínimo de 2 caracteres.</span>
+            <span id="register-name-error" class="tkf-auth-card__hint"
+              >Mínimo de 2 caracteres.</span
+            >
           }
         </label>
 
@@ -43,9 +46,12 @@ import { AuthStore } from '../auth-store';
             formControlName="email"
             placeholder="seu@email.com"
             [invalid]="emailInvalid"
+            [describedBy]="emailInvalid ? 'register-email-error' : ''"
           />
           @if (emailInvalid) {
-            <span class="tkf-auth-card__hint">Informe um email válido.</span>
+            <span id="register-email-error" class="tkf-auth-card__hint"
+              >Informe um email válido.</span
+            >
           }
         </label>
 
@@ -57,9 +63,12 @@ import { AuthStore } from '../auth-store';
             formControlName="password"
             placeholder="Mínimo 6 caracteres"
             [invalid]="passwordInvalid"
+            [describedBy]="passwordInvalid ? 'register-password-error' : ''"
           />
           @if (passwordInvalid) {
-            <span class="tkf-auth-card__hint">Mínimo de 6 caracteres.</span>
+            <span id="register-password-error" class="tkf-auth-card__hint"
+              >Mínimo de 6 caracteres.</span
+            >
           }
         </label>
 

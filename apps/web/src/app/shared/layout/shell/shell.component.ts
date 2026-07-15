@@ -19,6 +19,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
   imports: [RouterLink, RouterLinkActive, ToastContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <a class="tkf-shell__skip" href="#tkf-main" i18n>Skip to content</a>
     <div class="tkf-shell">
       <header class="tkf-shell__header">
         <a class="tkf-shell__brand" routerLink="/">
@@ -73,7 +74,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
           }
         </div>
       </header>
-      <main class="tkf-shell__main">
+      <main id="tkf-main" class="tkf-shell__main" tabindex="-1">
         <ng-content />
       </main>
     </div>
@@ -84,6 +85,25 @@ import { ThemeService } from '../../../core/theme/theme.service';
       :host {
         display: block;
         min-height: 100vh;
+      }
+      .tkf-shell__skip {
+        position: absolute;
+        left: var(--spacing-2);
+        top: -3rem;
+        z-index: 200;
+        padding: var(--spacing-2) var(--spacing-3);
+        background: var(--color-brand-600);
+        color: var(--color-neutral-0);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-sm);
+        text-decoration: none;
+        transition: top 120ms ease;
+      }
+      .tkf-shell__skip:focus {
+        top: var(--spacing-2);
+      }
+      .tkf-shell__main:focus {
+        outline: none;
       }
       .tkf-shell {
         display: flex;
@@ -168,6 +188,25 @@ import { ThemeService } from '../../../core/theme/theme.service';
       .tkf-shell__main {
         flex: 1;
         padding: var(--spacing-4);
+      }
+      @media (max-width: 640px) {
+        .tkf-shell__header {
+          flex-wrap: wrap;
+          height: auto;
+          gap: var(--spacing-2) var(--spacing-4);
+          padding: var(--spacing-2) var(--spacing-3);
+        }
+        .tkf-shell__nav {
+          order: 3;
+          width: 100%;
+          justify-content: space-between;
+        }
+        .tkf-shell__user {
+          display: none;
+        }
+        .tkf-shell__main {
+          padding: var(--spacing-3);
+        }
       }
     `,
   ],

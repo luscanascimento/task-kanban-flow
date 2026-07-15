@@ -29,9 +29,10 @@ import { AuthStore } from '../auth-store';
             formControlName="email"
             placeholder="seu@email.com"
             [invalid]="emailInvalid"
+            [describedBy]="emailInvalid ? 'login-email-error' : ''"
           />
           @if (emailInvalid) {
-            <span class="tkf-auth-card__hint">Informe um email válido.</span>
+            <span id="login-email-error" class="tkf-auth-card__hint">Informe um email válido.</span>
           }
         </label>
 
@@ -43,9 +44,12 @@ import { AuthStore } from '../auth-store';
             formControlName="password"
             placeholder="Sua senha"
             [invalid]="passwordInvalid"
+            [describedBy]="passwordInvalid ? 'login-password-error' : ''"
           />
           @if (passwordInvalid) {
-            <span class="tkf-auth-card__hint">Mínimo de 6 caracteres.</span>
+            <span id="login-password-error" class="tkf-auth-card__hint"
+              >Mínimo de 6 caracteres.</span
+            >
           }
         </label>
 
