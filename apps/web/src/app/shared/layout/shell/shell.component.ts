@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { ToastContainerComponent } from '@tkf/ui';
+
 import { AuthFacade } from '../../../core/auth/application/auth.facade';
 import { AuthStore } from '../../../core/auth/presentation/auth-store';
 import { ThemeService } from '../../../core/theme/theme.service';
@@ -14,7 +16,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
 @Component({
   selector: 'tkf-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, ToastContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tkf-shell">
@@ -75,6 +77,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
         <ng-content />
       </main>
     </div>
+    <tkf-toast-container />
   `,
   styles: [
     `

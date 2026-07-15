@@ -12,7 +12,9 @@
   "scripts": {
     "lint": "eslint src --max-warnings 0",
     "test": "jest --passWithNoTests",
-    "clean": "rm -rf node_modules .turbo coverage"
+    "storybook": "ng run ui:storybook",
+    "build-storybook": "ng run ui:build-storybook",
+    "clean": "rm -rf node_modules .turbo coverage storybook-static"
   },
   "peerDependencies": {
     "@angular/cdk": "^21.0.0",
@@ -22,7 +24,17 @@
   },
   "dependencies": {
     "@tkf/design-tokens": "workspace:*",
-    "@tkf/shared-utils": "workspace:*",
     "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^21.2.0",
+    "@angular/animations": "^21.0.0",
+    "@angular/cli": "^21.0.0",
+    "@angular/compiler": "^21.0.0",
+    "@angular/compiler-cli": "^21.0.0",
+    "@angular/platform-browser-dynamic": "^21.0.0",
+    "@storybook/angular": "^10.5.0",
+    "storybook": "^10.5.0",
+    "zone.js": "^0.15.0"
   }
 }

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { AvatarComponent, BadgeComponent, type BadgeVariant } from '@tkf/ui';
 import type { TaskDto, TaskPriority } from '@tkf/shared-types';
 
-const PRIORITY_META: Record<TaskPriority, { label: string; color: string }> = {
-  urgent: { label: 'Urgent', color: 'var(--color-semantic-danger)' },
-  high: { label: 'High', color: 'var(--color-semantic-warning)' },
-  medium: { label: 'Medium', color: 'var(--color-semantic-info)' },
-  low: { label: 'Low', color: 'var(--color-neutral-400)' },
-  lowest: { label: 'Lowest', color: 'var(--color-neutral-300)' },
+const PRIORITY_META: Record<TaskPriority, { label: string; variant: BadgeVariant }> = {
+  urgent: { label: 'Urgent', variant: 'danger' },
+  high: { label: 'High', variant: 'warning' },
+  medium: { label: 'Medium', variant: 'info' },
+  low: { label: 'Low', variant: 'neutral' },
+  lowest: { label: 'Lowest', variant: 'neutral' },
 };
 
 /**
@@ -19,13 +20,12 @@ const PRIORITY_META: Record<TaskPriority, { label: string; color: string }> = {
   selector: 'tkf-task-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AvatarComponent, BadgeComponent],
   host: { '[attr.data-priority]': 'task().priority' },
   template: `
     <article class="card" (click)="edit.emit(task())">
       <header class="card__top">
-        <span class="card__priority" [style.background]="priorityColor()">{{
-          priorityLabel()
-        }}</span>
+        <tkf-badge [variant]="priorityVariant()" size="sm">{{ priorityLabel() }}</tkf-badge>
         <button
           type="button"
           class="card__delete"
@@ -78,8 +78,8 @@ const PRIORITY_META: Record<TaskPriority, { label: string; color: string }> = {
             </span>
           }
         </div>
-        @if (task().assignee) {
-          <span class="avatar" [title]="task().assignee!.displayName">{{ initials() }}</span>
+        @if (task().assignee; as assignee) {
+          <tkf-avatar [name]="assignee.displayName" size="sm" />
         }
       </footer>
     </article>
@@ -113,14 +113,6 @@ const PRIORITY_META: Record<TaskPriority, { label: string; color: string }> = {
         align-items: center;
         justify-content: space-between;
         gap: var(--spacing-2);
-      }
-      .card__priority {
-        font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-neutral-0);
-        padding: 2px var(--spacing-2);
-        border-radius: var(--radius-full);
-        letter-spacing: 0.02em;
       }
       .card__delete {
         border: none;
@@ -210,19 +202,6 @@ const PRIORITY_META: Record<TaskPriority, { label: string; color: string }> = {
         color: var(--color-semantic-danger);
         font-weight: var(--font-weight-semibold);
       }
-      .avatar {
-        flex-shrink: 0;
-        width: 24px;
-        height: 24px;
-        border-radius: var(--radius-full);
-        background: var(--color-brand-500);
-        color: var(--color-neutral-0);
-        font-size: 10px;
-        font-weight: var(--font-weight-semibold);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
     `,
   ],
 })
@@ -232,7 +211,7 @@ export class TaskCardComponent {
   readonly delete = output<TaskDto>();
 
   readonly priorityLabel = computed(() => PRIORITY_META[this.task().priority].label);
-  readonly priorityColor = computed(() => PRIORITY_META[this.task().priority].color);
+  readonly priorityVariant = computed(() => PRIORITY_META[this.task().priority].variant);
   readonly checklistTotal = computed(() => this.task().checklistItems.length);
   readonly checklistDone = computed(
     () => this.task().checklistItems.filter((i) => i.checked).length,
@@ -253,16 +232,6 @@ export class TaskCardComponent {
     const due = this.task().dueDate;
     if (!due) return '';
     return new Date(due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  });
-
-  readonly initials = computed(() => {
-    const name = this.task().assignee?.displayName ?? '';
-    return name
-      .split(' ')
-      .map((p) => p.charAt(0))
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
   });
 
   onDelete(event: Event): void {

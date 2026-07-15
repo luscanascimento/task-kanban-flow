@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 
+import { ToastService } from '@tkf/ui';
 import type {
   AddTaskAttachmentRequestDto,
   CreateColumnRequestDto,
@@ -26,6 +27,7 @@ export class BoardDetailFacade {
   private readonly tasks = inject(TASK_REPOSITORY);
   private readonly clientsRepo = inject(CLIENT_REPOSITORY);
   private readonly store = inject(BoardDetailStore);
+  private readonly toast = inject(ToastService);
 
   readonly board = this.store.board;
   readonly allTasks = this.store.tasks;
@@ -80,17 +82,19 @@ export class BoardDetailFacade {
     this.store.removeTask(id);
     try {
       await this.tasks.remove(id);
+      this.toast.success('Task deleted.');
     } catch (e) {
       this.store.restoreTasks(snapshot);
-      this.store.setError(toMessage(e, 'Failed to delete task.'));
+      this.toast.error(toMessage(e, 'Failed to delete task.'));
     }
   }
 
   async addAttachment(taskId: string, payload: AddTaskAttachmentRequestDto): Promise<void> {
     try {
       this.store.upsertTask(await this.tasks.addAttachment(taskId, payload));
+      this.toast.success('Attachment added.');
     } catch (e) {
-      this.store.setError(toMessage(e, 'Failed to attach file.'));
+      this.toast.error(toMessage(e, 'Failed to attach file.'));
     }
   }
 
@@ -109,7 +113,7 @@ export class BoardDetailFacade {
       this.store.upsertTask(persisted);
     } catch (e) {
       this.store.restoreTasks(snapshot);
-      this.store.setError(toMessage(e, 'Failed to move task.'));
+      this.toast.error(toMessage(e, 'Failed to move task.'));
     }
   }
 
@@ -132,10 +136,11 @@ export class BoardDetailFacade {
     this.store.removeColumn(id);
     try {
       await this.columns.remove(id);
+      this.toast.success('Column deleted.');
     } catch (e) {
       this.store.restoreColumns(columnsSnapshot);
       this.store.restoreTasks(tasksSnapshot);
-      this.store.setError(toMessage(e, 'Failed to delete column.'));
+      this.toast.error(toMessage(e, 'Failed to delete column.'));
     }
   }
 

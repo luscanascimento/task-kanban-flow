@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "..",
+    "types": ["node"]
+  },
+  "include": ["../src/**/*.ts", "./preview.ts", "./main.ts"],
+  "exclude": ["../node_modules", "../dist", "../storybook-static"]
+}

@@ -73,6 +73,9 @@ export function moveItem<T>(
   if (fromIndex === toIndex) return items;
   const next = items.slice();
   const [moved] = next.splice(fromIndex, 1);
+  // The bounds check above guarantees an element; this guard narrows the
+  // `T | undefined` from noUncheckedIndexedAccess without a non-null assertion.
+  if (moved === undefined) return items;
   next.splice(toIndex, 0, moved);
   return next;
 }

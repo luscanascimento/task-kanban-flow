@@ -1,8 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { initials, stringToHslColor } from '@tkf/shared-utils';
-
 export type AvatarSize = 'sm' | 'md' | 'lg';
+
+/** Two-letter uppercase initials, e.g. "Ana Souza" → "AS". Kept local so the
+ * design system stays self-contained (no app/shared-utils coupling). */
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/** Deterministic HSL colour from a string, so the same name is always the
+ * same hue without storing a colour. */
+function stringToHslColor(value: string, saturation = 60, lightness = 45): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = value.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return `hsl(${Math.abs(hash) % 360}, ${saturation}%, ${lightness}%)`;
+}
 
 /**
  * tkf-avatar — a circular user/entity avatar. Shows the image when `src` is

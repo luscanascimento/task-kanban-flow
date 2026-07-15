@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 
+import { ToastService } from '@tkf/ui';
 import type { CreateBoardRequestDto, UpdateBoardRequestDto } from '@tkf/shared-types';
 
 import { BOARD_REPOSITORY } from '../domain/board.repository';
@@ -13,6 +14,7 @@ import { BoardsStore } from '../presentation/boards-store';
 export class BoardsFacade {
   private readonly repo = inject(BOARD_REPOSITORY);
   private readonly store = inject(BoardsStore);
+  private readonly toast = inject(ToastService);
 
   readonly boards = this.store.boards;
   readonly isLoading = this.store.isLoading;
@@ -32,8 +34,9 @@ export class BoardsFacade {
   async create(payload: CreateBoardRequestDto): Promise<void> {
     try {
       this.store.upsertBoard(await this.repo.create(payload));
+      this.toast.success('Board created.');
     } catch (e) {
-      this.store.setError(toMessage(e, 'Failed to create board.'));
+      this.toast.error(toMessage(e, 'Failed to create board.'));
     }
   }
 
@@ -41,7 +44,7 @@ export class BoardsFacade {
     try {
       this.store.upsertBoard(await this.repo.update(id, payload));
     } catch (e) {
-      this.store.setError(toMessage(e, 'Failed to update board.'));
+      this.toast.error(toMessage(e, 'Failed to update board.'));
     }
   }
 
@@ -51,9 +54,10 @@ export class BoardsFacade {
     this.store.removeBoard(id);
     try {
       await this.repo.remove(id);
+      this.toast.success('Board deleted.');
     } catch (e) {
       this.store.setBoards(snapshot);
-      this.store.setError(toMessage(e, 'Failed to delete board.'));
+      this.toast.error(toMessage(e, 'Failed to delete board.'));
     }
   }
 }

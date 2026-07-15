@@ -3,14 +3,16 @@
  * Use this instead of the built-in to keep key typing tight across the codebase.
  */
 export function keys<T extends object>(obj: T): ReadonlyArray<keyof T> {
-  return Object.keys(obj) as ReadonlyArray<keyof T>;
+  // Cast through `unknown`: `keyof T` can narrow to `never` (e.g. bare `object`),
+  // which TS considers non-overlapping with `string[]` under strict settings.
+  return Object.keys(obj) as unknown as ReadonlyArray<keyof T>;
 }
 
 /**
  * Type-safe `Object.entries`.
  */
 export function entries<T extends object>(obj: T): ReadonlyArray<readonly [keyof T, T[keyof T]]> {
-  return Object.entries(obj) as ReadonlyArray<readonly [keyof T, T[keyof T]]>;
+  return Object.entries(obj) as unknown as ReadonlyArray<readonly [keyof T, T[keyof T]]>;
 }
 
 /**

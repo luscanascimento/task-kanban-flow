@@ -11,11 +11,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { type CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
 
-import { ButtonComponent, LoadingComponent } from '@tkf/ui';
+import { AvatarComponent, ButtonComponent, LoadingComponent } from '@tkf/ui';
 import type { AddTaskAttachmentRequestDto, TaskDto, UpdateTaskRequestDto } from '@tkf/shared-types';
 
 import { BoardDetailFacade } from '../../application/board-detail.facade';
-import { initials } from '../../../../shared/util/initials';
 import { ColumnComponent } from './column.component';
 import { SecretsPanelComponent } from './secrets-panel.component';
 import { TaskDialogComponent } from './task-dialog.component';
@@ -39,6 +38,7 @@ type BoardTab = 'board' | 'secrets';
     ColumnComponent,
     TaskDialogComponent,
     SecretsPanelComponent,
+    AvatarComponent,
     ButtonComponent,
     LoadingComponent,
   ],
@@ -72,9 +72,12 @@ type BoardTab = 'board' | 'secrets';
             </label>
             <div class="board__members" [attr.aria-label]="'Members'" i18n-aria-label>
               @for (member of board.members; track member.user.id) {
-                <span class="board__avatar" [title]="member.user.displayName">{{
-                  toInitials(member.user.displayName)
-                }}</span>
+                <tkf-avatar
+                  class="board__avatar"
+                  [name]="member.user.displayName"
+                  size="sm"
+                  [title]="member.user.displayName"
+                />
               }
             </div>
             <span class="board__count"
@@ -259,17 +262,6 @@ type BoardTab = 'board' | 'secrets';
         display: flex;
       }
       .board__avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-full);
-        background: var(--color-brand-600);
-        color: var(--color-neutral-0);
-        font-size: 11px;
-        font-weight: var(--font-weight-semibold);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid var(--color-background-default);
         margin-left: -8px;
       }
       .board__avatar:first-child {
@@ -424,9 +416,5 @@ export class BoardDetailComponent {
 
   closeDialog(): void {
     this.selectedTaskId.set(null);
-  }
-
-  toInitials(name: string): string {
-    return initials(name);
   }
 }
