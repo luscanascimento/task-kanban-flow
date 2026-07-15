@@ -123,11 +123,14 @@ export const kanbanHandlers = [
   http.post('*/columns', async ({ request }) => {
     const body = (await request.json()) as CreateColumnRequestDto;
     const ts = kanban.timestamp();
+    // Server assigns the next position authoritatively to avoid client-side
+    // races where two concurrent creates compute the same index.
+    const position = db.columns.filter((c) => c.boardId === body.boardId).length;
     const column: ColumnDto = {
       id: kanban.newId('col'),
       boardId: body.boardId,
       title: body.title,
-      position: body.position,
+      position,
       createdAt: ts,
       updatedAt: ts,
       ...(body.color ? { color: body.color } : {}),

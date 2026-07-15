@@ -76,10 +76,12 @@ export class BoardDetailFacade {
   }
 
   async deleteTask(id: string): Promise<void> {
+    const snapshot = this.store.tasks();
     this.store.removeTask(id);
     try {
       await this.tasks.remove(id);
     } catch (e) {
+      this.store.restoreTasks(snapshot);
       this.store.setError(toMessage(e, 'Failed to delete task.'));
     }
   }
@@ -123,10 +125,16 @@ export class BoardDetailFacade {
   }
 
   async deleteColumn(id: string): Promise<void> {
+    // Snapshot both columns and tasks: removeColumn also drops the column's
+    // tasks, so a failed delete must restore the full slice.
+    const columnsSnapshot = this.store.columns();
+    const tasksSnapshot = this.store.tasks();
     this.store.removeColumn(id);
     try {
       await this.columns.remove(id);
     } catch (e) {
+      this.store.restoreColumns(columnsSnapshot);
+      this.store.restoreTasks(tasksSnapshot);
       this.store.setError(toMessage(e, 'Failed to delete column.'));
     }
   }

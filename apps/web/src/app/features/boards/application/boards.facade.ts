@@ -30,18 +30,31 @@ export class BoardsFacade {
   }
 
   async create(payload: CreateBoardRequestDto): Promise<void> {
-    const board = await this.repo.create(payload);
-    this.store.upsertBoard(board);
+    try {
+      this.store.upsertBoard(await this.repo.create(payload));
+    } catch (e) {
+      this.store.setError(toMessage(e, 'Failed to create board.'));
+    }
   }
 
   async update(id: string, payload: UpdateBoardRequestDto): Promise<void> {
-    const board = await this.repo.update(id, payload);
-    this.store.upsertBoard(board);
+    try {
+      this.store.upsertBoard(await this.repo.update(id, payload));
+    } catch (e) {
+      this.store.setError(toMessage(e, 'Failed to update board.'));
+    }
   }
 
   async remove(id: string): Promise<void> {
-    await this.repo.remove(id);
+    // Optimistic delete with rollback, mirroring the board-detail facade.
+    const snapshot = this.store.boards();
     this.store.removeBoard(id);
+    try {
+      await this.repo.remove(id);
+    } catch (e) {
+      this.store.setBoards(snapshot);
+      this.store.setError(toMessage(e, 'Failed to delete board.'));
+    }
   }
 }
 

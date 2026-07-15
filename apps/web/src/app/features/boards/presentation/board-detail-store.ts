@@ -120,5 +120,23 @@ export const BoardDetailStore = signalStore(
     restoreTasks(tasks: ReadonlyArray<TaskDto>): void {
       patchState(store, { tasks });
     },
+    restoreColumns(columns: ReadonlyArray<ColumnDto>): void {
+      patchState(store, { columns });
+    },
+    /**
+     * Optimistically reorder the columns to match `orderedColumnIds`,
+     * re-densifying their `position`. Returns a snapshot so the facade can
+     * roll back on error — mirroring `applyMove` for tasks.
+     */
+    applyColumnReorder(orderedColumnIds: ReadonlyArray<string>): ReadonlyArray<ColumnDto> {
+      const snapshot = store.columns();
+      const position = new Map(orderedColumnIds.map((id, index) => [id, index]));
+      const columns = snapshot.map((c) => {
+        const next = position.get(c.id);
+        return next === undefined ? c : { ...c, position: next };
+      });
+      patchState(store, { columns });
+      return snapshot;
+    },
   })),
 );
