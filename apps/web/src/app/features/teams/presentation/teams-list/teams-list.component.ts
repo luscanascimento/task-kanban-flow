@@ -2,10 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { ButtonComponent, LoadingComponent } from '@tkf/ui';
+import { AvatarComponent, ButtonComponent, LoadingComponent } from '@tkf/ui';
 
 import { TeamsFacade } from '../../application/teams.facade';
-import { initials } from '../../../../shared/util/initials';
 
 /**
  * Teams landing page — a grid of team cards plus an inline "create team"
@@ -16,7 +15,7 @@ import { initials } from '../../../../shared/util/initials';
   selector: 'tkf-teams-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, ButtonComponent, LoadingComponent],
+  imports: [FormsModule, RouterLink, AvatarComponent, ButtonComponent, LoadingComponent],
   template: `
     <section>
       <header class="head">
@@ -79,9 +78,12 @@ import { initials } from '../../../../shared/util/initials';
                 <div class="card__foot">
                   <div class="avatars">
                     @for (m of team.members; track m.user.id) {
-                      <span class="avatar" [title]="m.user.displayName">{{
-                        toInitials(m.user.displayName)
-                      }}</span>
+                      <tkf-avatar
+                        class="avatar"
+                        [name]="m.user.displayName"
+                        size="sm"
+                        [title]="m.user.displayName"
+                      />
                     }
                   </div>
                   <span class="count"
@@ -211,17 +213,6 @@ import { initials } from '../../../../shared/util/initials';
         display: flex;
       }
       .avatar {
-        width: 26px;
-        height: 26px;
-        border-radius: var(--radius-full);
-        background: var(--color-brand-600);
-        color: var(--color-neutral-0);
-        font-size: 10px;
-        font-weight: var(--font-weight-semibold);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid var(--color-background-default);
         margin-left: -8px;
       }
       .avatar:first-child {
@@ -262,10 +253,6 @@ export class TeamsListComponent {
 
   constructor() {
     void this.facade.load();
-  }
-
-  toInitials(name: string): string {
-    return initials(name);
   }
 
   submit(event: Event): void {

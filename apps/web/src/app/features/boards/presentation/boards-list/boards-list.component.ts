@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { LoadingComponent } from '@tkf/ui';
+import { AvatarComponent, SkeletonComponent } from '@tkf/ui';
 import type { BoardVisibility } from '@tkf/shared-types';
 
 import { BoardsFacade } from '../../application/boards.facade';
-import { initials } from '../../../../shared/util/initials';
 
 const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
   private: 'Private',
@@ -21,7 +20,7 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
   selector: 'tkf-boards-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, LoadingComponent],
+  imports: [RouterLink, AvatarComponent, SkeletonComponent],
   template: `
     <section class="boards">
       <header class="boards__header">
@@ -37,7 +36,15 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
       }
 
       @if (facade.isLoading()) {
-        <div class="boards__loading"><tkf-loading /> <span i18n>Loading boards…</span></div>
+        <ul class="boards__grid" aria-hidden="true">
+          @for (n of skeletons; track n) {
+            <li class="board-card board-card--skeleton">
+              <tkf-skeleton width="60%" height="1.1rem" />
+              <tkf-skeleton width="100%" height="0.8rem" />
+              <tkf-skeleton width="40%" height="0.8rem" />
+            </li>
+          }
+        </ul>
       } @else if (facade.isEmpty()) {
         <div class="boards__empty">
           <p i18n>No boards yet.</p>
@@ -59,9 +66,12 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
                 }
                 <div class="board-card__members">
                   @for (member of board.members; track member.user.id) {
-                    <span class="board-card__avatar" [title]="member.user.displayName">
-                      {{ toInitials(member.user.displayName) }}
-                    </span>
+                    <tkf-avatar
+                      class="board-card__avatar"
+                      [name]="member.user.displayName"
+                      size="sm"
+                      [title]="member.user.displayName"
+                    />
                   }
                 </div>
               </a>
@@ -195,21 +205,15 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
         margin-top: var(--spacing-1);
       }
       .board-card__avatar {
-        width: 26px;
-        height: 26px;
-        border-radius: var(--radius-full);
-        background: var(--color-brand-600);
-        color: var(--color-neutral-0);
-        font-size: 10px;
-        font-weight: var(--font-weight-semibold);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid var(--color-background-default);
         margin-left: -8px;
       }
       .board-card__avatar:first-child {
         margin-left: 0;
+      }
+      .board-card--skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
       }
       .board-card__delete {
         position: absolute;
@@ -235,6 +239,8 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
 })
 export class BoardsListComponent {
   readonly facade = inject(BoardsFacade);
+  /** Placeholder rows shown while boards load. */
+  readonly skeletons = [0, 1, 2, 3, 4, 5];
 
   constructor() {
     void this.facade.load();
@@ -242,10 +248,6 @@ export class BoardsListComponent {
 
   visibilityLabel(v: BoardVisibility): string {
     return VISIBILITY_LABELS[v];
-  }
-
-  toInitials(name: string): string {
-    return initials(name);
   }
 
   remove(id: string): void {
