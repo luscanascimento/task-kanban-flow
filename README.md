@@ -12,29 +12,29 @@
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Angular **21** (standalone components, signals, zoneless) |
-| State | [`@ngrx/signals`](https://ngrx.io/guide/signals) per feature |
-| Routing | Angular Router (lazy-loaded, view transitions) |
-| Forms | Angular Reactive Forms |
-| i18n | `@angular/localize` — pt-BR (default) + en-US |
-| Build | Angular CLI + `@angular-devkit/build-angular` |
-| Monorepo | [Turborepo](https://turbo.build/repo) + **pnpm** workspaces |
-| Language | TypeScript **strict** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) |
-| Lint | ESLint 9 flat config (`@tkf/eslint-config`) |
-| Format | Prettier |
-| Pre-commit | Husky + lint-staged + commitlint (Conventional Commits) |
-| Unit tests | Jest 30 + [`jest-preset-angular`](https://thymikee.github.io/jest-preset-angular/) + Testing Library |
-| E2E | Playwright (3-shard parallelism in CI) |
-| Storybook | Storybook 8 (in `@tkf/ui` — wired in Phase 1) |
-| Mock API | [MSW 2](https://mswjs.io) (browser + node) |
-| Design tokens | Style Dictionary → CSS variables + typed JS |
-| Theming | Light/Dark via `[data-theme]` on `<html>` |
-| Containers | Multi-stage Dockerfile → nginx-alpine |
-| CI/CD | GitHub Actions (pnpm cache + Turbo cache) |
-| Observability | Sentry SDK wired (DSN-gated) |
-| Security | JWT + refresh + RBAC (`admin | manager | member | viewer`) |
+| Layer         | Choice                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ------- | ------ | -------- |
+| Framework     | Angular **21** (standalone components, signals, zoneless)                                            |
+| State         | [`@ngrx/signals`](https://ngrx.io/guide/signals) per feature                                         |
+| Routing       | Angular Router (lazy-loaded, view transitions)                                                       |
+| Forms         | Angular Reactive Forms                                                                               |
+| i18n          | `@angular/localize` — pt-BR (default) + en-US                                                        |
+| Build         | Angular CLI + `@angular-devkit/build-angular`                                                        |
+| Monorepo      | [Turborepo](https://turbo.build/repo) + **pnpm** workspaces                                          |
+| Language      | TypeScript **strict** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                     |
+| Lint          | ESLint 9 flat config (`@tkf/eslint-config`)                                                          |
+| Format        | Prettier                                                                                             |
+| Pre-commit    | Husky + lint-staged + commitlint (Conventional Commits)                                              |
+| Unit tests    | Jest 30 + [`jest-preset-angular`](https://thymikee.github.io/jest-preset-angular/) + Testing Library |
+| E2E           | Playwright (3-shard parallelism in CI)                                                               |
+| Storybook     | Storybook 10 (component catalog in `@tkf/ui`)                                                        |
+| Mock API      | [MSW 2](https://mswjs.io) (browser + node)                                                           |
+| Design tokens | Style Dictionary → CSS variables + typed JS                                                          |
+| Theming       | Light/Dark via `[data-theme]` on `<html>`                                                            |
+| Containers    | Multi-stage Dockerfile → nginx-alpine                                                                |
+| CI/CD         | GitHub Actions (pnpm cache + Turbo cache)                                                            |
+| Observability | Sentry SDK wired (DSN-gated)                                                                         |
+| Security      | JWT + refresh + RBAC (`admin                                                                         | manager | member | viewer`) |
 
 ---
 
@@ -116,23 +116,23 @@ task-kanban-flow/
 
 ## Common commands
 
-| Command | Effect |
-|---|---|
-| `pnpm install` | Install all workspace dependencies |
-| `pnpm tokens` | Rebuild design tokens (`packages/design-tokens/dist/`) |
-| `pnpm build` | Build all apps + packages (Turborepo DAG) |
-| `pnpm dev` | Run both apps in dev mode |
-| `pnpm --filter @tkf/web dev` | Run only the web app |
-| `pnpm test` | Run unit tests across the workspace |
-| `pnpm test:watch` | Jest watch mode |
-| `pnpm e2e` | Run Playwright E2E (requires built apps or `webServer`) |
-| `pnpm lint` | ESLint across all packages |
-| `pnpm lint:fix` | ESLint with `--fix` |
-| `pnpm format` | Prettier write across the workspace |
-| `pnpm storybook` | *(Phase 1)* Start Storybook for `@tkf/ui` |
-| `pnpm clean` | Remove all `node_modules` and build artifacts |
-| `docker compose build` | Build both Docker images |
-| `docker compose up` | Serve web on `:4200`, admin on `:4300` |
+| Command                           | Effect                                                  |
+| --------------------------------- | ------------------------------------------------------- |
+| `pnpm install`                    | Install all workspace dependencies                      |
+| `pnpm tokens`                     | Rebuild design tokens (`packages/design-tokens/dist/`)  |
+| `pnpm build`                      | Build all apps + packages (Turborepo DAG)               |
+| `pnpm dev`                        | Run both apps in dev mode                               |
+| `pnpm --filter @tkf/web dev`      | Run only the web app                                    |
+| `pnpm test`                       | Run unit tests across the workspace                     |
+| `pnpm test:watch`                 | Jest watch mode                                         |
+| `pnpm e2e`                        | Run Playwright E2E (requires built apps or `webServer`) |
+| `pnpm lint`                       | ESLint across all packages                              |
+| `pnpm lint:fix`                   | ESLint with `--fix`                                     |
+| `pnpm format`                     | Prettier write across the workspace                     |
+| `pnpm --filter @tkf/ui storybook` | Start Storybook for `@tkf/ui` (port 6006)               |
+| `pnpm clean`                      | Remove all `node_modules` and build artifacts           |
+| `docker compose build`            | Build both Docker images                                |
+| `docker compose up`               | Serve web on `:4200`, admin on `:4300`                  |
 
 ---
 
@@ -151,13 +151,19 @@ Full design rationale: **[`docs/architecture.md`](./docs/architecture.md)** (17 
 
 ## Roadmap
 
-| Phase | Scope | Status |
-|---|---|---|
-| **0 — Foundation** | Monorepo, tooling, Clean Arch skeleton, MSW, CI/CD, Docker, docs | ✅ This release |
-| **1 — Core features** | Login, signup, dashboard, boards, columns, cards, priorities, RBAC | ⏳ Next |
-| **2 — Collaboration** | Labels, comments, history, checklist, file upload | Planned |
-| **3 — Analytics** | Dashboard analítico, charts, SLA, reports | Planned |
-| **4 — Realtime** | WebSocket, live updates, notifications, presence | Planned |
+| Phase                 | Scope                                                                                                                              | Status     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| **0 — Foundation**    | Monorepo, tooling, Clean Arch skeleton, MSW, CI/CD, Docker, docs                                                                   | ✅ Shipped |
+| **1 — Core features** | Auth (login/register/refresh), boards, columns, cards, priorities, WIP limits, **card + column drag-and-drop**, card search/filter | ✅ Shipped |
+| **1.5 — Workspaces**  | Teams (roles + membership-gated boards), Clients registry, per-board Secrets vault, card attachments (images/PDF/docs)             | ✅ Shipped |
+| **2 — Collaboration** | Labels, comments, activity history, checklist editing, non-image file upload                                                       | ⏳ Next    |
+| **3 — Analytics**     | Dashboard, charts, SLA, reports                                                                                                    | Planned    |
+| **4 — Realtime**      | WebSocket, live updates, notifications, presence                                                                                   | Planned    |
+
+The `@tkf/ui` design system ships 12 token-driven, accessible components
+(button, input, select, textarea, field, avatar, badge, card, skeleton,
+modal, loading, toast) documented in **Storybook** (`pnpm --filter @tkf/ui storybook`).
+Unit tests: **119** (Jest) across the web app and shared packages.
 
 ---
 

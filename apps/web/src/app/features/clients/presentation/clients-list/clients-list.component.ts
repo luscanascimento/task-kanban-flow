@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -255,7 +255,7 @@ import { initials } from '../../../../shared/util/initials';
     `,
   ],
 })
-export class ClientsListComponent implements OnInit {
+export class ClientsListComponent {
   readonly facade = inject(ClientsFacade);
 
   readonly creating = signal(false);
@@ -264,7 +264,7 @@ export class ClientsListComponent implements OnInit {
   readonly email = signal('');
   readonly color = signal('#0ea5e9');
 
-  ngOnInit(): void {
+  constructor() {
     void this.facade.load();
   }
 

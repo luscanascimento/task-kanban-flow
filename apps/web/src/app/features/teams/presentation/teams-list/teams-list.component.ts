@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -253,14 +253,14 @@ import { initials } from '../../../../shared/util/initials';
     `,
   ],
 })
-export class TeamsListComponent implements OnInit {
+export class TeamsListComponent {
   readonly facade = inject(TeamsFacade);
 
   readonly creating = signal(false);
   readonly name = signal('');
   readonly description = signal('');
 
-  ngOnInit(): void {
+  constructor() {
     void this.facade.load();
   }
 

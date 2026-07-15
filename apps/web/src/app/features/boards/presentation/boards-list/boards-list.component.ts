@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LoadingComponent } from '@tkf/ui';
@@ -233,10 +233,10 @@ const VISIBILITY_LABELS: Record<BoardVisibility, string> = {
     `,
   ],
 })
-export class BoardsListComponent implements OnInit {
+export class BoardsListComponent {
   readonly facade = inject(BoardsFacade);
 
-  ngOnInit(): void {
+  constructor() {
     void this.facade.load();
   }
 

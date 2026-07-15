@@ -1,7 +1,32 @@
 # Handoff — Fase 0 (Scaffolding) → Fase 1
 
-**Última atualização:** 2026-07-13
+**Última atualização:** 2026-07-15
 **Branch:** `main`
+
+---
+
+## 🟢 Atualização 2026-07-15 — Portfolio hardening pass
+
+Passagem de qualidade sobre o que já estava entregue (branch `feat/portfolio-hardening`):
+
+- **Correção:** rollback em `deleteTask`/`deleteColumn`/`BoardsFacade.remove` (antes o item
+  sumia da UI mas sobrevivia no servidor); interceptor de auth agora **coalesce 401s
+  concorrentes** num único refresh (era um flag `isRefreshing` que descartava requisições).
+- **Design system:** `@tkf/ui` foi de 3 → **12 componentes** (avatar, badge, card, modal,
+  toast, select, textarea, field, skeleton + button/input/loading endurecidos), todos
+  token-driven e com foco em a11y. **Storybook 10** ligado (`ng run ui:build-storybook`
+  verificado) com stories. `initials()` centralizado em `@tkf/shared-utils`.
+- **Features:** **column reorder** drag-and-drop ligado (repo+MSW já existiam); busca/filtro
+  de cards por título/prioridade; validação de anexo (tamanho 5 MB + tipo) e suporte a
+  não-imagens (PDF/docs).
+- **A11y:** modal com focus-trap/Escape/restore (task dialog migrado), cards navegáveis por
+  teclado, `aria-describedby` nos formulários de auth, skip-link + header responsivo.
+- **Toasts:** feedback de sucesso/erro nas facades de board.
+- **Testes:** cobertura unitária do web subiu de **11 → 87** (facades, interceptor
+  concorrente, guard, JwtService, stores, repos HTTP, ordering). Total repo ≈ **119**.
+- **Docs:** este README/roadmap reconciliados com o que está no código.
+
+Blockers de setup abaixo (Fase 0) já estão resolvidos — mantidos por histórico.
 
 ---
 
