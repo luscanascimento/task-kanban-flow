@@ -1,7 +1,21 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ButtonComponent } from '@tkf/ui';
+import {
+  ButtonComponent,
+  InputComponent,
+  ModalComponent,
+  SelectComponent,
+  TextareaComponent,
+  ToastService,
+} from '@tkf/ui';
 import type {
   AddTaskAttachmentRequestDto,
   BoardMemberDto,
@@ -29,152 +43,159 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
+/** 5 MB — data-URL attachments live in memory, so keep uploads modest. */
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+/** Accepted MIME prefixes/exact types for task attachments. */
+const ACCEPTED_MIME_PREFIXES = ['image/', 'text/'];
+const ACCEPTED_MIME_EXACT = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /**
- * Modal editor for a single task. Editable fields hydrate from the task via
- * `linkedSignal` keyed on the task id — so re-opening on a different card
- * resets the form, but background updates to the same task (e.g. adding an
- * attachment) do not discard in-progress edits. Attachments are applied
- * immediately (they have their own endpoints); text fields on Save.
+ * Modal editor for a single task, built on the accessible `tkf-modal`
+ * (focus trap, Escape, focus restore, scroll lock). Editable fields hydrate
+ * from the task via `linkedSignal` keyed on the task id — so re-opening on a
+ * different card resets the form, but background updates to the same task
+ * (e.g. adding an attachment) do not discard in-progress edits. Attachments
+ * are applied immediately; text fields on Save.
  */
 @Component({
   selector: 'tkf-task-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonComponent],
+  imports: [
+    FormsModule,
+    ModalComponent,
+    ButtonComponent,
+    InputComponent,
+    SelectComponent,
+    TextareaComponent,
+  ],
   template: `
-    <div class="backdrop" (click)="close.emit()">
-      <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-        <header class="dialog__header">
-          <h2 class="dialog__heading" i18n>Edit task</h2>
-          <button
-            type="button"
-            class="dialog__close"
-            aria-label="Close"
-            i18n-aria-label
-            (click)="close.emit()"
-          >
-            ×
-          </button>
-        </header>
+    <tkf-modal title="Edit task" size="lg" (close)="close.emit()">
+      <div class="form">
+        <label class="field">
+          <span class="field__label" i18n>Title</span>
+          <input tkf-input [(ngModel)]="title" name="title" />
+        </label>
 
-        <div class="dialog__body">
+        <label class="field">
+          <span class="field__label" i18n>Description</span>
+          <textarea tkf-textarea rows="3" [(ngModel)]="description" name="description"></textarea>
+        </label>
+
+        <div class="field-row">
           <label class="field">
-            <span class="field__label" i18n>Title</span>
-            <input class="field__control" [(ngModel)]="title" name="title" />
-          </label>
-
-          <label class="field">
-            <span class="field__label" i18n>Description</span>
-            <textarea
-              class="field__control"
-              rows="3"
-              [(ngModel)]="description"
-              name="description"
-            ></textarea>
-          </label>
-
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label" i18n>Priority</span>
-              <select class="field__control" [(ngModel)]="priority" name="priority">
-                @for (p of priorities; track p.value) {
-                  <option [value]="p.value">{{ p.label }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              <span class="field__label" i18n>Status</span>
-              <select class="field__control" [(ngModel)]="status" name="status">
-                @for (s of statuses; track s.value) {
-                  <option [value]="s.value">{{ s.label }}</option>
-                }
-              </select>
-            </label>
-          </div>
-
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label" i18n>Assignee</span>
-              <select class="field__control" [(ngModel)]="assigneeId" name="assignee">
-                <option value="" i18n>Unassigned</option>
-                @for (m of members(); track m.user.id) {
-                  <option [value]="m.user.id">{{ m.user.displayName }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              <span class="field__label" i18n>Due date</span>
-              <input class="field__control" type="date" [(ngModel)]="dueDate" name="dueDate" />
-            </label>
-          </div>
-
-          <label class="field">
-            <span class="field__label" i18n>Client</span>
-            <select class="field__control" [(ngModel)]="clientId" name="client">
-              <option value="" i18n>— none —</option>
-              @for (c of clients(); track c.id) {
-                <option [value]="c.id">{{ c.name }}</option>
+            <span class="field__label" i18n>Priority</span>
+            <select tkf-select [(ngModel)]="priority" name="priority">
+              @for (p of priorities; track p.value) {
+                <option [value]="p.value">{{ p.label }}</option>
               }
             </select>
           </label>
-
-          <!-- Attachments (prints) -->
-          <div class="field">
-            <span class="field__label" i18n>Attachments</span>
-            @if (task().attachments.length) {
-              <ul class="attachments">
-                @for (att of task().attachments; track att.id) {
-                  <li class="attachment">
-                    @if (isImage(att)) {
-                      <a [href]="att.url" target="_blank" rel="noopener noreferrer">
-                        <img class="attachment__thumb" [src]="att.url" [alt]="att.name" />
-                      </a>
-                    } @else {
-                      <span class="attachment__file">📎</span>
-                    }
-                    <span class="attachment__name" [title]="att.name">{{ att.name }}</span>
-                    <button
-                      type="button"
-                      class="attachment__del"
-                      aria-label="Remove attachment"
-                      i18n-aria-label
-                      (click)="removeAttachment.emit(att.id)"
-                    >
-                      ×
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
-            <label class="upload">
-              <input
-                type="file"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                hidden
-                #fileInput
-              />
-              <button type="button" tkf-button variant="secondary" (click)="fileInput.click()" i18n>
-                Upload a print
-              </button>
-              <span class="upload__hint" i18n>PNG, JPG or SVG</span>
-            </label>
-          </div>
-
-          @if (task().checklistItems.length) {
-            <div class="field">
-              <span class="field__label" i18n>Checklist</span>
-              <ul class="checklist">
-                @for (item of task().checklistItems; track item.id) {
-                  <li class="checklist__item" [class.checklist__item--done]="item.checked">
-                    <span class="checklist__box">{{ item.checked ? '☑' : '☐' }}</span>
-                    {{ item.text }}
-                  </li>
-                }
-              </ul>
-            </div>
-          }
+          <label class="field">
+            <span class="field__label" i18n>Status</span>
+            <select tkf-select [(ngModel)]="status" name="status">
+              @for (s of statuses; track s.value) {
+                <option [value]="s.value">{{ s.label }}</option>
+              }
+            </select>
+          </label>
         </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span class="field__label" i18n>Assignee</span>
+            <select tkf-select [(ngModel)]="assigneeId" name="assignee">
+              <option value="" i18n>Unassigned</option>
+              @for (m of members(); track m.user.id) {
+                <option [value]="m.user.id">{{ m.user.displayName }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label" i18n>Due date</span>
+            <input tkf-input type="date" [(ngModel)]="dueDate" name="dueDate" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label" i18n>Client</span>
+          <select tkf-select [(ngModel)]="clientId" name="client">
+            <option value="" i18n>— none —</option>
+            @for (c of clients(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Attachments -->
+        <div class="field">
+          <span class="field__label" i18n>Attachments</span>
+          @if (task().attachments.length) {
+            <ul class="attachments">
+              @for (att of task().attachments; track att.id) {
+                <li class="attachment">
+                  @if (isImage(att)) {
+                    <a [href]="att.url" target="_blank" rel="noopener noreferrer">
+                      <img class="attachment__thumb" [src]="att.url" [alt]="att.name" />
+                    </a>
+                  } @else {
+                    <span class="attachment__file" aria-hidden="true">📎</span>
+                  }
+                  <span class="attachment__name" [title]="att.name">{{ att.name }}</span>
+                  <span class="attachment__size">{{ size(att) }}</span>
+                  <button
+                    type="button"
+                    class="attachment__del"
+                    aria-label="Remove attachment"
+                    i18n-aria-label
+                    (click)="removeAttachment.emit(att.id)"
+                  >
+                    ×
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+          <label class="upload">
+            <input
+              type="file"
+              accept="image/*,application/pdf,.doc,.docx,.txt,.csv"
+              (change)="onFileSelected($event)"
+              hidden
+              #fileInput
+            />
+            <button type="button" tkf-button variant="secondary" (click)="fileInput.click()" i18n>
+              Upload file
+            </button>
+            <span class="upload__hint" i18n>Images, PDF or docs · max 5 MB</span>
+          </label>
+        </div>
+
+        @if (task().checklistItems.length) {
+          <div class="field">
+            <span class="field__label" i18n>Checklist</span>
+            <ul class="checklist">
+              @for (item of task().checklistItems; track item.id) {
+                <li class="checklist__item" [class.checklist__item--done]="item.checked">
+                  <span class="checklist__box" aria-hidden="true">{{
+                    item.checked ? '☑' : '☐'
+                  }}</span>
+                  {{ item.text }}
+                </li>
+              }
+            </ul>
+          </div>
+        }
 
         <footer class="dialog__footer">
           <button type="button" class="dialog__delete" (click)="remove.emit(task())" i18n>
@@ -187,59 +208,11 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
           <button type="button" tkf-button (click)="onSave()" i18n>Save changes</button>
         </footer>
       </div>
-    </div>
+    </tkf-modal>
   `,
   styles: [
     `
-      .backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: var(--spacing-8) var(--spacing-4);
-        z-index: 50;
-        overflow-y: auto;
-      }
-      .dialog {
-        width: 100%;
-        max-width: 560px;
-        background: var(--color-background-default);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-xl);
-        display: flex;
-        flex-direction: column;
-      }
-      .dialog__header,
-      .dialog__footer {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-2);
-        padding: var(--spacing-4);
-      }
-      .dialog__header {
-        border-bottom: 1px solid var(--color-neutral-200);
-      }
-      .dialog__footer {
-        border-top: 1px solid var(--color-neutral-200);
-      }
-      .dialog__heading {
-        margin: 0;
-        font-size: var(--font-size-lg);
-        flex: 1;
-        color: var(--color-foreground-default);
-      }
-      .dialog__close {
-        border: none;
-        background: transparent;
-        font-size: var(--font-size-xl);
-        line-height: 1;
-        cursor: pointer;
-        color: var(--color-foreground-muted);
-      }
-      .dialog__body {
-        padding: var(--spacing-4);
+      .form {
         display: flex;
         flex-direction: column;
         gap: var(--spacing-4);
@@ -260,20 +233,6 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
         color: var(--color-foreground-muted);
         text-transform: uppercase;
         letter-spacing: 0.03em;
-      }
-      .field__control {
-        padding: var(--spacing-2);
-        border: 1px solid var(--color-neutral-300);
-        border-radius: var(--radius-md);
-        font: inherit;
-        font-size: var(--font-size-sm);
-        background: var(--color-background-default);
-        color: var(--color-foreground-default);
-      }
-      .field__control:focus {
-        outline: 2px solid var(--color-brand-500);
-        outline-offset: 0;
-        border-color: transparent;
       }
       .attachments {
         list-style: none;
@@ -307,6 +266,11 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .attachment__size {
+        font-size: var(--font-size-xs);
+        color: var(--color-foreground-subtle);
+        flex-shrink: 0;
+      }
       .attachment__del {
         border: none;
         background: transparent;
@@ -317,6 +281,10 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
       }
       .attachment__del:hover {
         color: var(--color-semantic-danger);
+      }
+      .attachment__del:focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
       }
       .upload {
         display: flex;
@@ -345,6 +313,13 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
         color: var(--color-foreground-subtle);
         text-decoration: line-through;
       }
+      .dialog__footer {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding-top: var(--spacing-2);
+        border-top: 1px solid var(--color-neutral-200);
+      }
       .dialog__spacer {
         flex: 1;
       }
@@ -355,6 +330,11 @@ const STATUSES: ReadonlyArray<{ value: TaskStatus; label: string }> = [
         cursor: pointer;
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
+      }
+      .dialog__delete:focus-visible {
+        outline: 2px solid var(--color-semantic-danger);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
       }
     `,
   ],
@@ -369,6 +349,8 @@ export class TaskDialogComponent {
   readonly remove = output<TaskDto>();
   readonly addAttachment = output<AddTaskAttachmentRequestDto>();
   readonly removeAttachment = output<string>();
+
+  private readonly toast = inject(ToastService);
 
   readonly priorities = PRIORITIES;
   readonly statuses = STATUSES;
@@ -406,21 +388,39 @@ export class TaskDialogComponent {
     return att.mimeType.startsWith('image/');
   }
 
+  size(att: TaskAttachmentDto): string {
+    return formatBytes(att.sizeBytes);
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    input.value = '';
     if (!file) return;
+
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      this.toast.error(`"${file.name}" is ${formatBytes(file.size)} — the limit is 5 MB.`);
+      return;
+    }
+    const mime = file.type || 'application/octet-stream';
+    const accepted =
+      ACCEPTED_MIME_PREFIXES.some((p) => mime.startsWith(p)) || ACCEPTED_MIME_EXACT.includes(mime);
+    if (!accepted) {
+      this.toast.error(`"${file.name}" (${mime}) is not an accepted file type.`);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       this.addAttachment.emit({
         name: file.name,
-        mimeType: file.type || 'application/octet-stream',
+        mimeType: mime,
         url: reader.result as string,
         sizeBytes: file.size,
       });
     };
+    reader.onerror = () => this.toast.error(`Failed to read "${file.name}".`);
     reader.readAsDataURL(file);
-    input.value = '';
   }
 
   onSave(): void {
