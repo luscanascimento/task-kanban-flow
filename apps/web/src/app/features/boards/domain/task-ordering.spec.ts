@@ -77,4 +77,56 @@ describe('moveTask', () => {
       expect(positions).toEqual(positions.map((_, i) => i));
     }
   });
+
+  it('clamps a target position beyond the column length to the end', () => {
+    const result = moveTask(seed(), 'a', 'done', 99);
+    // 'a' asked for slot 99 but the column only has room for index 2.
+    expect(layout(result, 'done')).toEqual(['x@0', 'y@1', 'a@2']);
+    expect(layout(result, 'todo')).toEqual(['b@0', 'c@1']);
+  });
+
+  it('moves a task down within the same column and re-densifies', () => {
+    // 'a'@0 requests slot 2; 'c'@2 shifts up, so densifying yields b, a, c.
+    const result = moveTask(seed(), 'a', 'todo', 2);
+    expect(layout(result, 'todo')).toEqual(['b@0', 'a@1', 'c@2']);
+  });
+
+  it('keeps columns contiguous 0..n-1 across chained moves', () => {
+    let result: ReadonlyArray<TaskDto> = seed();
+    result = moveTask(result, 'a', 'done', 0);
+    result = moveTask(result, 'y', 'todo', 1);
+    result = moveTask(result, 'c', 'done', 0);
+    for (const columnId of ['todo', 'done']) {
+      const positions = tasksInColumn(result, columnId).map((t) => t.position);
+      expect(positions).toEqual(positions.map((_, i) => i));
+    }
+    // Every task still lives in exactly one column with a unique slot.
+    expect(layout(result, 'todo').length + layout(result, 'done').length).toBe(5);
+  });
+});
+
+describe('tasksInColumn', () => {
+  const seed = (): TaskDto[] => [
+    task('a', 'todo', 2),
+    task('b', 'todo', 0),
+    task('c', 'todo', 1),
+    task('x', 'done', 0),
+  ];
+
+  it('returns tasks of a column ordered by position', () => {
+    expect(layout(seed(), 'todo')).toEqual(['b@0', 'c@1', 'a@2']);
+  });
+
+  it('returns an empty array for an unknown column id', () => {
+    expect(tasksInColumn(seed(), 'nope')).toEqual([]);
+  });
+
+  it('preserves insertion order for tasks that share an equal position (stable sort)', () => {
+    const tied: TaskDto[] = [
+      task('first', 'todo', 0),
+      task('second', 'todo', 0),
+      task('third', 'todo', 0),
+    ];
+    expect(tasksInColumn(tied, 'todo').map((t) => t.id)).toEqual(['first', 'second', 'third']);
+  });
 });
