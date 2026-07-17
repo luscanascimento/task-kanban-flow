@@ -86,7 +86,9 @@ task-kanban-flow/
 │   │   ├── angular.json
 │   │   ├── Dockerfile
 │   │   └── playwright.config.ts
-│   └── admin/                  # Admin app (port 4300) — mirror of web/
+│   ├── admin/                  # Admin app (port 4300) — mirror of web/
+│   ├── api/                    # Security-hardened REST backend (Fastify + SQLite, port 3000)
+│   └── mcp/                    # MCP server — lets AI agents drive the kanban via the API
 │
 ├── packages/
 │   ├── ui/                     # Design system (tkf-button, tkf-loading, …)
@@ -101,7 +103,10 @@ task-kanban-flow/
 │   └── nginx/default.conf      # SPA-fallback nginx config used by Dockerfile
 │
 ├── docs/
-│   └── architecture.md         # 17 ADs + layer rules
+│   ├── architecture.md         # 17 ADs + layer rules
+│   ├── api-guide.md            # Public REST API: keys, endpoints, curl examples
+│   ├── mcp-guide.md            # MCP server setup for Claude Desktop / Code
+│   └── backend-architecture.md # apps/api design + full security posture
 │
 ├── .github/workflows/          # ci.yml, codeql.yml
 ├── .husky/                     # pre-commit, commit-msg
@@ -116,23 +121,25 @@ task-kanban-flow/
 
 ## Common commands
 
-| Command                           | Effect                                                  |
-| --------------------------------- | ------------------------------------------------------- |
-| `pnpm install`                    | Install all workspace dependencies                      |
-| `pnpm tokens`                     | Rebuild design tokens (`packages/design-tokens/dist/`)  |
-| `pnpm build`                      | Build all apps + packages (Turborepo DAG)               |
-| `pnpm dev`                        | Run both apps in dev mode                               |
-| `pnpm --filter @tkf/web dev`      | Run only the web app                                    |
-| `pnpm test`                       | Run unit tests across the workspace                     |
-| `pnpm test:watch`                 | Jest watch mode                                         |
-| `pnpm e2e`                        | Run Playwright E2E (requires built apps or `webServer`) |
-| `pnpm lint`                       | ESLint across all packages                              |
-| `pnpm lint:fix`                   | ESLint with `--fix`                                     |
-| `pnpm format`                     | Prettier write across the workspace                     |
-| `pnpm --filter @tkf/ui storybook` | Start Storybook for `@tkf/ui` (port 6006)               |
-| `pnpm clean`                      | Remove all `node_modules` and build artifacts           |
-| `docker compose build`            | Build both Docker images                                |
-| `docker compose up`               | Serve web on `:4200`, admin on `:4300`                  |
+| Command                           | Effect                                                             |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `pnpm install`                    | Install all workspace dependencies                                 |
+| `pnpm tokens`                     | Rebuild design tokens (`packages/design-tokens/dist/`)             |
+| `pnpm build`                      | Build all apps + packages (Turborepo DAG)                          |
+| `pnpm dev`                        | Run both apps in dev mode                                          |
+| `pnpm --filter @tkf/web dev`      | Run only the web app                                               |
+| `pnpm --filter @tkf/api dev`      | Run the REST backend on `:3000` (seeds demo data; docs at `/docs`) |
+| `pnpm --filter @tkf/mcp build`    | Build the MCP server (`apps/mcp/dist/main.js`)                     |
+| `pnpm test`                       | Run unit tests across the workspace                                |
+| `pnpm test:watch`                 | Jest watch mode                                                    |
+| `pnpm e2e`                        | Run Playwright E2E (requires built apps or `webServer`)            |
+| `pnpm lint`                       | ESLint across all packages                                         |
+| `pnpm lint:fix`                   | ESLint with `--fix`                                                |
+| `pnpm format`                     | Prettier write across the workspace                                |
+| `pnpm --filter @tkf/ui storybook` | Start Storybook for `@tkf/ui` (port 6006)                          |
+| `pnpm clean`                      | Remove all `node_modules` and build artifacts                      |
+| `docker compose build`            | Build both Docker images                                           |
+| `docker compose up`               | Serve web on `:4200`, admin on `:4300`                             |
 
 ---
 
