@@ -12,6 +12,7 @@ import type {
 
 import { environment } from '../../../../environments/environment';
 import { type TaskRepository } from '../domain/task.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /** HTTP adapter for `TaskRepository`. */
 @Injectable({ providedIn: 'root' })
@@ -21,8 +22,8 @@ export class HttpTaskRepository implements TaskRepository {
 
   listByBoard(boardId: string): Promise<ReadonlyArray<TaskDto>> {
     return firstValueFrom(
-      this.http.get<ReadonlyArray<TaskDto>>(`${this.baseUrl}/boards/${boardId}/tasks`),
-    );
+      this.http.get<ListResponse<TaskDto>>(`${this.baseUrl}/boards/${boardId}/tasks`),
+    ).then(unwrapItems);
   }
 
   create(payload: CreateTaskRequestDto): Promise<TaskDto> {

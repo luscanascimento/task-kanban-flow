@@ -13,6 +13,7 @@ import type {
 
 import { environment } from '../../../../environments/environment';
 import { type TeamRepository } from '../domain/team.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /** HTTP adapter for `TeamRepository`. */
 @Injectable({ providedIn: 'root' })
@@ -21,7 +22,7 @@ export class HttpTeamRepository implements TeamRepository {
   private readonly baseUrl = `${environment.apiBaseUrl}/teams`;
 
   list(): Promise<ReadonlyArray<TeamDto>> {
-    return firstValueFrom(this.http.get<ReadonlyArray<TeamDto>>(this.baseUrl));
+    return firstValueFrom(this.http.get<ListResponse<TeamDto>>(this.baseUrl)).then(unwrapItems);
   }
 
   getById(id: string): Promise<TeamDto> {
@@ -30,8 +31,8 @@ export class HttpTeamRepository implements TeamRepository {
 
   listBoards(teamId: string): Promise<ReadonlyArray<BoardDto>> {
     return firstValueFrom(
-      this.http.get<ReadonlyArray<BoardDto>>(`${this.baseUrl}/${teamId}/boards`),
-    );
+      this.http.get<ListResponse<BoardDto>>(`${this.baseUrl}/${teamId}/boards`),
+    ).then(unwrapItems);
   }
 
   create(payload: CreateTeamRequestDto): Promise<TeamDto> {

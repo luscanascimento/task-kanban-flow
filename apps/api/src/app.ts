@@ -10,6 +10,7 @@ import { registerErrorHandler } from './http/error-handler.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerApiKeyRoutes } from './routes/api-keys.routes.js';
 import { registerBoardRoutes, registerTaskRoutes } from './routes/kanban.routes.js';
+import { registerColumnRoutes } from './routes/columns.routes.js';
 import { registerClientRoutes } from './routes/clients.routes.js';
 import { registerTeamRoutes } from './routes/teams.routes.js';
 import { registerSecretRoutes } from './routes/secrets.routes.js';
@@ -52,6 +53,7 @@ export async function buildApp(options: BuildOptions = {}): Promise<FastifyInsta
   await app.register(registerAuthRoutes, { prefix: '/api/v1/auth' });
   await app.register(registerApiKeyRoutes, { prefix: '/api/v1/keys' });
   await app.register(registerBoardRoutes, { prefix: '/api/v1/boards' });
+  await app.register(registerColumnRoutes, { prefix: '/api/v1/columns' });
   await app.register(registerTaskRoutes, { prefix: '/api/v1/tasks' });
   await app.register(registerClientRoutes, { prefix: '/api/v1/clients' });
   await app.register(registerTeamRoutes, { prefix: '/api/v1/teams' });

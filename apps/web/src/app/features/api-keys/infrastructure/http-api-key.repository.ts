@@ -6,21 +6,21 @@ import type { ApiKeyDto, CreateApiKeyRequestDto, CreatedApiKeyDto } from '@tkf/s
 
 import { environment } from '../../../../environments/environment';
 import { type ApiKeyRepository } from '../domain/api-key.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /**
  * HTTP adapter for `ApiKeyRepository`.
  *
- * In the mock world this hits MSW at `${apiBaseUrl}/api-keys`. Against the real
- * backend (`apps/api`) the equivalent endpoint is `/api/v1/keys` and requires a
- * signed-in user session; only the base path differs.
+ * Hits `${apiBaseUrl}/keys` — the real backend's key-management endpoint
+ * (`/api/v1/keys`), which requires a signed-in user session. MSW mirrors it.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpApiKeyRepository implements ApiKeyRepository {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiBaseUrl}/api-keys`;
+  private readonly baseUrl = `${environment.apiBaseUrl}/keys`;
 
   list(): Promise<ReadonlyArray<ApiKeyDto>> {
-    return firstValueFrom(this.http.get<ReadonlyArray<ApiKeyDto>>(this.baseUrl));
+    return firstValueFrom(this.http.get<ListResponse<ApiKeyDto>>(this.baseUrl)).then(unwrapItems);
   }
 
   create(payload: CreateApiKeyRequestDto): Promise<CreatedApiKeyDto> {

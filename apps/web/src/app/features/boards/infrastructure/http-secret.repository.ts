@@ -10,6 +10,7 @@ import type {
 
 import { environment } from '../../../../environments/environment';
 import { type SecretRepository } from '../domain/secret.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /** HTTP adapter for `SecretRepository`. */
 @Injectable({ providedIn: 'root' })
@@ -19,8 +20,8 @@ export class HttpSecretRepository implements SecretRepository {
 
   listByBoard(boardId: string): Promise<ReadonlyArray<ProjectSecretDto>> {
     return firstValueFrom(
-      this.http.get<ReadonlyArray<ProjectSecretDto>>(`${this.baseUrl}/boards/${boardId}/secrets`),
-    );
+      this.http.get<ListResponse<ProjectSecretDto>>(`${this.baseUrl}/boards/${boardId}/secrets`),
+    ).then(unwrapItems);
   }
 
   create(boardId: string, payload: CreateProjectSecretRequestDto): Promise<ProjectSecretDto> {

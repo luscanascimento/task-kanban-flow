@@ -106,6 +106,29 @@ export function registerTeamRoutes(app: App): void {
     },
   );
 
+  app.patch(
+    '/:id/members/:userId',
+    {
+      ...write,
+      schema: {
+        params: Type.Object({ id: Type.String(), userId: Type.String() }),
+        body: Type.Object({ role }, { additionalProperties: false }),
+      },
+    },
+    async (request) => {
+      const team = app.repos.teams.get(request.params.id);
+      if (!team || !team.members.some((m) => m.user.id === request.params.userId)) {
+        throw notFound('Team member not found');
+      }
+      app.repos.teams.addMember(
+        request.params.id,
+        request.params.userId,
+        request.body.role as TeamRole,
+      );
+      return app.repos.teams.get(request.params.id);
+    },
+  );
+
   app.delete(
     '/:id/members/:userId',
     { ...write, schema: { params: Type.Object({ id: Type.String(), userId: Type.String() }) } },

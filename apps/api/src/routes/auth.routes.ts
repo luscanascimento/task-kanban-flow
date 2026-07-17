@@ -109,11 +109,12 @@ export function registerAuthRoutes(app: App): void {
   );
 
   // Refresh — reads the token from the httpOnly cookie or the request body.
-  // CSRF-protected because it acts on an ambient cookie credential.
+  // CSRF defense is the SameSite=strict refresh cookie (a cross-site page can't
+  // cause it to be sent); body-based bearer refresh isn't ambient, so isn't
+  // CSRF-able. `GET /auth/csrf` remains available for stricter cookie-only setups.
   app.post(
     '/refresh',
     {
-      onRequest: app.csrfProtection,
       schema: {
         body: Type.Optional(
           Type.Object(
@@ -150,7 +151,7 @@ export function registerAuthRoutes(app: App): void {
     },
   );
 
-  app.post('/logout', { onRequest: app.csrfProtection }, async (request, reply) => {
+  app.post('/logout', async (request, reply) => {
     const signed = request.cookies[REFRESH_COOKIE];
     const token = signed ? app.unsignCookie(signed).value : null;
     if (token) {

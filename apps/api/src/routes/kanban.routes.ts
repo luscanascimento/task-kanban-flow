@@ -151,15 +151,21 @@ export function registerBoardRoutes(app: App): void {
       ...write,
       schema: {
         params: boardIdParam,
+        // Accept either `orderedIds` (canonical) or `orderedColumnIds` (the web
+        // app's key) so both the API contract and the app work unchanged.
         body: Type.Object(
-          { orderedIds: Type.Array(Type.String()) },
+          {
+            orderedIds: Type.Optional(Type.Array(Type.String())),
+            orderedColumnIds: Type.Optional(Type.Array(Type.String())),
+          },
           { additionalProperties: false },
         ),
       },
     },
-    async (request) => ({
-      items: app.repos.columns.reorder(request.params.boardId, request.body.orderedIds),
-    }),
+    async (request) => {
+      const ordered = request.body.orderedIds ?? request.body.orderedColumnIds ?? [];
+      return { items: app.repos.columns.reorder(request.params.boardId, ordered) };
+    },
   );
 
   // Tasks (nested under a board).

@@ -6,6 +6,7 @@ import type { BoardDto, CreateBoardRequestDto, UpdateBoardRequestDto } from '@tk
 
 import { environment } from '../../../../environments/environment';
 import { type BoardRepository } from '../domain/board.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /**
  * HTTP adapter for `BoardRepository`. Talks to the real API — or, in
@@ -18,7 +19,7 @@ export class HttpBoardRepository implements BoardRepository {
   private readonly baseUrl = `${environment.apiBaseUrl}/boards`;
 
   list(): Promise<ReadonlyArray<BoardDto>> {
-    return firstValueFrom(this.http.get<ReadonlyArray<BoardDto>>(this.baseUrl));
+    return firstValueFrom(this.http.get<ListResponse<BoardDto>>(this.baseUrl)).then(unwrapItems);
   }
 
   getById(id: string): Promise<BoardDto> {

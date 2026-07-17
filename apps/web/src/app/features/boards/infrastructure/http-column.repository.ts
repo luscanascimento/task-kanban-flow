@@ -6,6 +6,7 @@ import type { ColumnDto, CreateColumnRequestDto, UpdateColumnRequestDto } from '
 
 import { environment } from '../../../../environments/environment';
 import { type ColumnRepository } from '../domain/column.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /** HTTP adapter for `ColumnRepository`. */
 @Injectable({ providedIn: 'root' })
@@ -15,8 +16,8 @@ export class HttpColumnRepository implements ColumnRepository {
 
   listByBoard(boardId: string): Promise<ReadonlyArray<ColumnDto>> {
     return firstValueFrom(
-      this.http.get<ReadonlyArray<ColumnDto>>(`${this.baseUrl}/boards/${boardId}/columns`),
-    );
+      this.http.get<ListResponse<ColumnDto>>(`${this.baseUrl}/boards/${boardId}/columns`),
+    ).then(unwrapItems);
   }
 
   create(payload: CreateColumnRequestDto): Promise<ColumnDto> {
@@ -32,11 +33,10 @@ export class HttpColumnRepository implements ColumnRepository {
     orderedColumnIds: ReadonlyArray<string>,
   ): Promise<ReadonlyArray<ColumnDto>> {
     return firstValueFrom(
-      this.http.post<ReadonlyArray<ColumnDto>>(
-        `${this.baseUrl}/boards/${boardId}/columns/reorder`,
-        { orderedColumnIds },
-      ),
-    );
+      this.http.post<ListResponse<ColumnDto>>(`${this.baseUrl}/boards/${boardId}/columns/reorder`, {
+        orderedColumnIds,
+      }),
+    ).then(unwrapItems);
   }
 
   remove(id: string): Promise<void> {

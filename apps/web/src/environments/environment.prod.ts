@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: '',
+  apiBaseUrl: '/api/v1',
   useMockApi: false,
   sentry: {
     dsn: '',

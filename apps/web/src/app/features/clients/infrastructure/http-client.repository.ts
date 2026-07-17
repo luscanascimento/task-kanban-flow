@@ -11,6 +11,7 @@ import type {
 
 import { environment } from '../../../../environments/environment';
 import { type ClientRepository } from '../domain/client.repository';
+import { type ListResponse, unwrapItems } from '../../../shared/util/unwrap-items';
 
 /** HTTP adapter for `ClientRepository`. */
 @Injectable({ providedIn: 'root' })
@@ -19,7 +20,7 @@ export class HttpClientRepository implements ClientRepository {
   private readonly baseUrl = `${environment.apiBaseUrl}/clients`;
 
   list(): Promise<ReadonlyArray<ClientDto>> {
-    return firstValueFrom(this.http.get<ReadonlyArray<ClientDto>>(this.baseUrl));
+    return firstValueFrom(this.http.get<ListResponse<ClientDto>>(this.baseUrl)).then(unwrapItems);
   }
 
   getById(id: string): Promise<ClientDto> {
@@ -28,8 +29,8 @@ export class HttpClientRepository implements ClientRepository {
 
   listBoards(clientId: string): Promise<ReadonlyArray<BoardDto>> {
     return firstValueFrom(
-      this.http.get<ReadonlyArray<BoardDto>>(`${this.baseUrl}/${clientId}/boards`),
-    );
+      this.http.get<ListResponse<BoardDto>>(`${this.baseUrl}/${clientId}/boards`),
+    ).then(unwrapItems);
   }
 
   create(payload: CreateClientRequestDto): Promise<ClientDto> {

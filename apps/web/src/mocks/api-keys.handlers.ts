@@ -23,12 +23,12 @@ function randomToken(): string {
 }
 
 export const apiKeysHandlers = [
-  http.get('*/api-keys', () => {
+  http.get('*/keys', () => {
     const metadata: ApiKeyDto[] = keys.map(({ key: _key, ...meta }) => meta);
     return HttpResponse.json(metadata);
   }),
 
-  http.post('*/api-keys', async ({ request }) => {
+  http.post('*/keys', async ({ request }) => {
     const body = (await request.json()) as { name?: string; scope?: ApiKeyScope };
     if (!body.name || !body.name.trim()) {
       return HttpResponse.json(
@@ -51,7 +51,7 @@ export const apiKeysHandlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.delete('*/api-keys/:id', ({ params }) => {
+  http.delete('*/keys/:id', ({ params }) => {
     const record = keys.find((k) => k.id === params['id']);
     if (!record || record.revoked) {
       return HttpResponse.json(

@@ -76,20 +76,20 @@ JSON columns. See `apps/api/src/db/schema.ts` for the DDL. Notable columns:
 
 ## 4. Security posture
 
-| Concern              | Mitigation                                                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **SQL injection**    | 100% parameterized prepared statements (better-sqlite3); no string interpolation                             |
-| **Password storage** | Argon2id (19 MiB, t=2) + per-hash random salt + server-side **pepper** (HMAC pre-hash)                       |
-| **Secrets at rest**  | AES-256-GCM with per-record IV + auth tag; API returns metadata only                                         |
-| **API keys**         | Shown once; stored as HMAC-SHA256(pepper); constant-time compare; soft-delete revocation                     |
-| **Sessions**         | Short-lived JWT access + rotating refresh in an httpOnly, SameSite=strict, signed cookie                     |
-| **CSRF**             | `@fastify/csrf-protection` on cookie-based refresh/logout (+ SameSite=strict)                                |
-| **XSS (headers)**    | Helmet with a strict Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` |
-| **CORS**             | Locked to configured web origin(s); credentials allowed only for them                                        |
-| **Rate limiting**    | Global per-IP cap + stricter cap on auth routes; `429` with retry hint                                       |
-| **Input validation** | TypeBox/AJV schemas per route; unknown fields stripped, types/lengths enforced                               |
-| **Error leakage**    | Central handler returns a stable `ApiErrorDto`; 5xx details are logged, not returned                         |
-| **TLS/HTTPS**        | Terminated at the reverse proxy (see `docker/nginx`); set `COOKIE_SECURE=true` behind it                     |
+| Concern              | Mitigation                                                                                                                                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SQL injection**    | 100% parameterized prepared statements (better-sqlite3); no string interpolation                                                                                                              |
+| **Password storage** | Argon2id (19 MiB, t=2) + per-hash random salt + server-side **pepper** (HMAC pre-hash)                                                                                                        |
+| **Secrets at rest**  | AES-256-GCM with per-record IV + auth tag; API returns metadata only                                                                                                                          |
+| **API keys**         | Shown once; stored as HMAC-SHA256(pepper); constant-time compare; soft-delete revocation                                                                                                      |
+| **Sessions**         | Short-lived JWT access + rotating refresh in an httpOnly, SameSite=strict, signed cookie                                                                                                      |
+| **CSRF**             | Refresh cookie is httpOnly + **SameSite=strict** (a cross-site page can't send it); body-based bearer refresh isn't ambient. `GET /auth/csrf` issues a token for stricter cookie-only setups. |
+| **XSS (headers)**    | Helmet with a strict Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`                                                                                  |
+| **CORS**             | Locked to configured web origin(s); credentials allowed only for them                                                                                                                         |
+| **Rate limiting**    | Global per-IP cap + stricter cap on auth routes; `429` with retry hint                                                                                                                        |
+| **Input validation** | TypeBox/AJV schemas per route; unknown fields stripped, types/lengths enforced                                                                                                                |
+| **Error leakage**    | Central handler returns a stable `ApiErrorDto`; 5xx details are logged, not returned                                                                                                          |
+| **TLS/HTTPS**        | Terminated at the reverse proxy (see `docker/nginx`); set `COOKIE_SECURE=true` behind it                                                                                                      |
 
 **Secrets & config** (`apps/api/.env`, see `.env.example`): `JWT_ACCESS_SECRET`,
 `JWT_REFRESH_SECRET`, `PASSWORD_PEPPER`, `APIKEY_PEPPER`, `SECRETS_ENC_KEY`
@@ -120,9 +120,20 @@ weak-password rejection, input sanitisation, API-key create→use→revoke→401
   wire it into `createRepositories`, add a route file with TypeBox schemas, and
   register it in `app.ts`. Add MCP tools in `apps/mcp/src/tools.ts` if agents
   need it.
-- **Point the web app at the API**: set `environment.useMockApi = false` and
-  `apiBaseUrl` to the API. The app's existing HTTP adapters already match these
-  routes; configure MSW to bypass `/api/v1/*` if you run both.
+- **Run the web app against the real backend** (instead of MSW):
+  1. Terminal 1 — `pnpm --filter @tkf/api dev` (backend on :3000, seeds demo data).
+  2. In `apps/web/src/environments/environment.ts` set `useMockApi: false`
+     (`apiBaseUrl` is already `http://localhost:3000/api/v1`). MSW only starts
+     when `useMockApi` is true, so turning it off routes every call to the API.
+  3. Terminal 2 — `pnpm --filter @tkf/web dev`; sign in with
+     `demo@example.com` / `password123`.
+
+  The app's HTTP adapters are backend-agnostic: list endpoints tolerate both a
+  bare array (MSW) and the API's `{ items }` envelope (`shared/util/unwrap-items.ts`),
+  and the API accepts the app's payload variants (flat `POST /columns`,
+  `orderedColumnIds` on reorder). Default stays on MSW so tests/CI are offline
+  and unchanged.
+
 - **Real deployment**: put it behind the nginx config in `docker/`, set
   `COOKIE_SECURE=true`, provide real secrets, and use a persistent volume for
   `data/`.
