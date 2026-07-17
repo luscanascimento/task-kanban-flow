@@ -32,14 +32,19 @@ async function dragCardTo(
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   // Engage the CDK drag (must move past the drag threshold), then travel to
-  // the target in steps, settling with an extra move so CDK registers the
-  // enter into the new drop container before release.
+  // the target in steps, settling with extra moves so CDK reliably registers
+  // the enter into the new drop container before release. CDK drags via
+  // synthetic pointer events are timing-sensitive, so we over-settle.
   await page.mouse.move(from.x + from.width / 2 + 12, from.y + from.height / 2 + 12);
-  await page.mouse.move(tx, ty, { steps: 20 });
-  await page.mouse.move(tx, ty + 4, { steps: 5 });
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(50);
+  await page.mouse.move(tx, ty, { steps: 25 });
+  await page.waitForTimeout(150);
+  await page.mouse.move(tx, ty + 6, { steps: 8 });
+  await page.waitForTimeout(150);
+  await page.mouse.move(tx, ty - 4, { steps: 5 });
+  await page.waitForTimeout(200);
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(350);
 }
 
 test.describe('Kanban', () => {
@@ -102,6 +107,31 @@ test.describe('Kanban', () => {
 
     await expect(done.locator('tkf-task-card', { hasText: cardText })).toBeVisible();
     await expect(backlog.locator('tkf-task-card', { hasText: cardText })).toHaveCount(0);
+  });
+
+  test('an image can be attached to a task', async ({ page }) => {
+    await page.getByRole('link', { name: /Product Roadmap/ }).click();
+
+    const cardText = 'Add keyboard shortcuts for card actions';
+    await page.locator('tkf-task-card', { hasText: cardText }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    // A 1×1 transparent PNG, uploaded through the (hidden) file input.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    await dialog
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'screenshot.png', mimeType: 'image/png', buffer: png });
+
+    await expect(dialog.locator('.attachment', { hasText: 'screenshot.png' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+
+    // The card now shows the attachment count badge.
+    await expect(page.locator('tkf-task-card', { hasText: cardText })).toContainText('📎');
   });
 
   test('editing a task updates the card', async ({ page }) => {

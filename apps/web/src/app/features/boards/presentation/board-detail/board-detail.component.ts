@@ -9,13 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import {
-  CdkDrag,
-  type CdkDragDrop,
-  CdkDropList,
-  CdkDropListGroup,
-  moveItemInArray,
-} from '@angular/cdk/drag-drop';
+import { CdkDrag, type CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import {
   AvatarComponent,
@@ -54,7 +48,6 @@ type BoardTab = 'board' | 'secrets';
   imports: [
     FormsModule,
     RouterLink,
-    CdkDropListGroup,
     CdkDropList,
     CdkDrag,
     ColumnComponent,
@@ -179,7 +172,6 @@ type BoardTab = 'board' | 'secrets';
         </div>
         <div
           class="board__columns"
-          cdkDropListGroup
           cdkDropList
           cdkDropListOrientation="horizontal"
           [cdkDropListData]="facade.orderedColumns()"
@@ -190,6 +182,7 @@ type BoardTab = 'board' | 'secrets';
             <div class="board__column-wrap" cdkDrag [cdkDragData]="group.column">
               <tkf-column
                 [data]="group"
+                [connectedTo]="columnIds()"
                 [dropPredicate]="acceptTasks"
                 (addTask)="onAddTask(group.column.id, $event)"
                 (editTask)="openTask($event)"
@@ -468,6 +461,11 @@ export class BoardDetailComponent {
   }
 
   readonly priorities = PRIORITIES;
+
+  /** Ids of every column, so each card list connects to all the others for
+   * cross-column drops (replaces cdkDropListGroup, which overlapped the
+   * horizontal column-reorder list and blocked card drops). */
+  readonly columnIds = computed(() => this.facade.orderedColumns().map((c) => c.id));
 
   onPriorityFilter(value: string): void {
     this.facade.setPriorityFilter(value === '' ? null : (value as TaskPriority));

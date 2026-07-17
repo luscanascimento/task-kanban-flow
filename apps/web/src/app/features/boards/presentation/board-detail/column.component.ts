@@ -58,6 +58,7 @@ import { TaskCardComponent } from './task-card.component';
         cdkDropList
         [id]="data().column.id"
         [cdkDropListData]="data().tasks"
+        [cdkDropListConnectedTo]="connectedTo()"
         [cdkDropListEnterPredicate]="dropPredicate()"
         (cdkDropListDropped)="dropped.emit($event)"
       >
@@ -258,6 +259,8 @@ export class ColumnComponent {
   /** Predicate deciding whether a dragged item may enter this task list
    * (used to keep column drags out of the card lists). */
   readonly dropPredicate = input<(drag: CdkDrag) => boolean>(() => true);
+  /** Ids of the sibling task lists cards may be dropped into (all columns). */
+  readonly connectedTo = input<ReadonlyArray<string>>([]);
 
   readonly addTask = output<string>();
   readonly editTask = output<TaskDto>();
