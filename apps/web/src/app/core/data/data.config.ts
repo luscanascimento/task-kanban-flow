@@ -12,6 +12,8 @@ import { HttpSecretRepository } from '../../features/boards/infrastructure/http-
 import { HttpTaskRepository } from '../../features/boards/infrastructure/http-task.repository';
 import { TEAM_REPOSITORY } from '../../features/teams/domain/team.repository';
 import { HttpTeamRepository } from '../../features/teams/infrastructure/http-team.repository';
+import { API_KEY_REPOSITORY } from '../../features/api-keys/domain/api-key.repository';
+import { HttpApiKeyRepository } from '../../features/api-keys/infrastructure/http-api-key.repository';
 
 /**
  * Bind every kanban hexagonal port to its HTTP adapter, once, at the app
@@ -28,5 +30,6 @@ export function provideKanbanData(): EnvironmentProviders {
     { provide: TASK_REPOSITORY, useClass: HttpTaskRepository },
     { provide: CLIENT_REPOSITORY, useClass: HttpClientRepository },
     { provide: SECRET_REPOSITORY, useClass: HttpSecretRepository },
+    { provide: API_KEY_REPOSITORY, useClass: HttpApiKeyRepository },
   ]);
 }

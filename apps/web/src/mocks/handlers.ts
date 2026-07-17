@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import { kanbanHandlers } from './kanban.handlers';
+import { apiKeysHandlers } from './api-keys.handlers';
 
 /**
  * MSW request handlers. Mirror the contracts in @tkf/shared-types.
@@ -93,5 +94,6 @@ export const handlers = [
 
   http.post('*/auth/logout', () => new HttpResponse(null, { status: 204 })),
 
+  ...apiKeysHandlers,
   ...kanbanHandlers,
 ];

@@ -50,6 +50,13 @@ import { ThemeService } from '../../../core/theme/theme.service';
               i18n
               >Clients</a
             >
+            <a
+              routerLink="/settings/api-keys"
+              routerLinkActive="tkf-shell__link--active"
+              class="tkf-shell__link"
+              i18n
+              >API Keys</a
+            >
           </nav>
         }
 

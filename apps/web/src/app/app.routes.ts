@@ -31,6 +31,11 @@ export const routes: Routes = [
       import('./features/clients/routes/clients.routes').then((m) => m.CLIENTS_ROUTES),
   },
   {
+    path: 'settings/api-keys',
+    loadChildren: () =>
+      import('./features/api-keys/routes/api-keys.routes').then((m) => m.API_KEYS_ROUTES),
+  },
+  {
     path: 'health',
     loadChildren: () =>
       import('./features/health-check/routes/health-check.routes').then(
