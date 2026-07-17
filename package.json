@@ -53,5 +53,10 @@
     "*.{json,md,scss,css,html,yaml,yml}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }
