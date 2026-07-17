@@ -1,0 +1,33 @@
+{
+  "name": "@tkf/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Model Context Protocol server for Task Kanban Flow — lets an AI agent drive the kanban over the public REST API using an API key.",
+  "type": "module",
+  "bin": {
+    "tkf-mcp": "./dist/main.js"
+  },
+  "main": "./dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsup",
+    "start": "node dist/main.js",
+    "lint": "eslint src --max-warnings 0",
+    "test": "jest --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf node_modules .turbo dist coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@swc/jest": "^0.2.37",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.7",
+    "jest": "^30.0.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
