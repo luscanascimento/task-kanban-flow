@@ -127,6 +127,63 @@ describe('authHttpInterceptor', () => {
     expect(resultB).toHaveBeenCalledWith({ from: 'tasks' });
   });
 
+  it('starts a fresh refresh for a later 401 after the first refresh settled', () => {
+    jwt.getAccessToken.mockReturnValue('stale');
+    jwt.getRefreshToken.mockReturnValue('refresh-1');
+
+    // First full cycle: 401 -> refresh -> retry.
+    const resultA = jest.fn();
+    http.get(`${API}/boards`).subscribe(resultA);
+    httpMock.expectOne(`${API}/boards`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    httpMock
+      .expectOne(`${API}/auth/refresh`)
+      .flush({ tokens: { accessToken: 'fresh', refreshToken: 'refresh-2' } });
+    httpMock.expectOne(`${API}/boards`).flush({ ok: true });
+    expect(resultA).toHaveBeenCalledWith({ ok: true });
+
+    // The refresh has fully settled; refresh$ should have been reset to null.
+    jwt.getRefreshToken.mockReturnValue('refresh-2');
+
+    // Second wave: a later 401 must trigger a BRAND-NEW refresh.
+    const resultB = jest.fn();
+    http.get(`${API}/tasks`).subscribe(resultB);
+    httpMock.expectOne(`${API}/tasks`).flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    const secondWave = httpMock.match(`${API}/auth/refresh`);
+    expect(secondWave.length).toBe(1);
+    expect(secondWave[0].request.body).toEqual({ refreshToken: 'refresh-2' });
+    secondWave[0].flush({ tokens: { accessToken: 'fresher', refreshToken: 'refresh-3' } });
+
+    const retriedB = httpMock.expectOne(`${API}/tasks`);
+    expect(retriedB.request.headers.get('Authorization')).toBe('Bearer fresher');
+    retriedB.flush({ ok: true });
+    expect(resultB).toHaveBeenCalledWith({ ok: true });
+  });
+
+  it('does not leave refresh$ set after a failed refresh (a later 401 refreshes anew)', () => {
+    jwt.getAccessToken.mockReturnValue('stale');
+    jwt.getRefreshToken.mockReturnValue('refresh-1');
+
+    // First cycle fails the refresh.
+    const errorA = jest.fn();
+    http.get(`${API}/boards`).subscribe({ error: errorA });
+    httpMock.expectOne(`${API}/boards`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    httpMock
+      .expectOne(`${API}/auth/refresh`)
+      .flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(errorA).toHaveBeenCalled();
+
+    // A later 401 must issue a fresh refresh POST, not reuse the failed one.
+    const errorB = jest.fn();
+    http.get(`${API}/tasks`).subscribe({ error: errorB });
+    httpMock.expectOne(`${API}/tasks`).flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    const secondWave = httpMock.match(`${API}/auth/refresh`);
+    expect(secondWave.length).toBe(1);
+    secondWave[0].flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(errorB).toHaveBeenCalled();
+  });
+
   it('clears tokens and navigates to /auth/login when refresh fails', () => {
     jwt.getAccessToken.mockReturnValue('stale');
     jwt.getRefreshToken.mockReturnValue('refresh-1');
