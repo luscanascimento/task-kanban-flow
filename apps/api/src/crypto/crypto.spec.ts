@@ -54,6 +54,54 @@ describe('AES-256-GCM secret encryption', () => {
     );
     expect(() => decryptSecret(tampered, key)).toThrow();
   });
+
+  it('rejects a flipped bit in the auth tag itself', () => {
+    const [version, iv, tag, ciphertext] = encryptSecret('value', key).split('.') as [
+      string,
+      string,
+      string,
+      string,
+    ];
+    const tagBytes = Buffer.from(tag, 'base64url');
+    tagBytes.writeUInt8(tagBytes.readUInt8(0) ^ 0xff, 0);
+    const tampered = [version, iv, tagBytes.toString('base64url'), ciphertext].join('.');
+    expect(tampered).not.toBe(encryptSecret('value', key));
+    expect(() => decryptSecret(tampered, key)).toThrow();
+  });
+
+  it('never emits the same envelope twice for the same input (random IV)', () => {
+    const a = encryptSecret('same', key);
+    const b = encryptSecret('same', key);
+    expect(a).not.toBe(b);
+    expect(decryptSecret(a, key)).toBe(decryptSecret(b, key));
+  });
+
+  it('tags every envelope with the v1 version marker', () => {
+    expect(encryptSecret('value', key).split('.')).toHaveLength(4);
+    expect(encryptSecret('value', key).startsWith('v1.')).toBe(true);
+  });
+
+  it.each([
+    ['empty string', ''],
+    ['plain text, no envelope', 'just-a-secret'],
+    ['too few segments', 'v1.aaaa.bbbb'],
+    ['too many segments', 'v1.aaaa.bbbb.cccc.dddd'],
+    ['unknown version', 'v2.aaaa.bbbb.cccc'],
+    ['missing version marker', 'aaaa.bbbb.cccc.dddd'],
+  ])('rejects a malformed envelope: %s', (_case, envelope) => {
+    expect(() => decryptSecret(envelope, key)).toThrow('Malformed secret envelope');
+  });
+
+  it('rejects a well-formed v1 envelope carrying a truncated IV', () => {
+    const [version, , tag, ciphertext] = encryptSecret('value', key).split('.') as [
+      string,
+      string,
+      string,
+      string,
+    ];
+    const shortIv = Buffer.alloc(4).toString('base64url');
+    expect(() => decryptSecret([version, shortIv, tag, ciphertext].join('.'), key)).toThrow();
+  });
 });
 
 describe('API keys', () => {
@@ -73,5 +121,40 @@ describe('API keys', () => {
     expect(hashesEqual('abcd', 'abcd')).toBe(true);
     expect(hashesEqual('abcd', 'abce')).toBe(false);
     expect(hashesEqual('abcd', 'ab')).toBe(false); // different lengths
+  });
+
+  it('emits tkf_ + 43 base64url chars (32 bytes of entropy)', () => {
+    expect(generateApiKey(PEPPER).plaintext).toMatch(/^tkf_[A-Za-z0-9_-]{43}$/);
+  });
+
+  it('never repeats a key', () => {
+    const plaintexts = new Set(Array.from({ length: 200 }, () => generateApiKey(PEPPER).plaintext));
+    expect(plaintexts.size).toBe(200);
+  });
+
+  it('stores a SHA-256 digest, from which the key cannot be read back', () => {
+    const key = generateApiKey(PEPPER);
+    expect(key.hash).toMatch(/^[0-9a-f]{64}$/);
+    // The random part of the key appears nowhere in the stored form.
+    expect(key.hash).not.toContain(key.plaintext.slice('tkf_'.length));
+  });
+
+  it('binds the hash to the pepper, so a stolen database cannot verify guesses', () => {
+    const key = generateApiKey(PEPPER);
+    expect(hashApiKey(key.plaintext, 'attacker-pepper')).not.toBe(key.hash);
+    expect(hashesEqual(hashApiKey(key.plaintext, 'attacker-pepper'), key.hash)).toBe(false);
+  });
+
+  it('keeps the display prefix non-secret: it cannot reproduce the stored hash', () => {
+    const key = generateApiKey(PEPPER);
+    expect(key.display).toHaveLength('tkf_'.length + 8);
+    expect(key.plaintext.startsWith(key.display)).toBe(true);
+    expect(key.plaintext).not.toBe(key.display);
+    expect(hashApiKey(key.display, PEPPER)).not.toBe(key.hash);
+  });
+
+  it('does not mistake a JWT for an API key', () => {
+    expect(looksLikeApiKey('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.sig')).toBe(false);
+    expect(looksLikeApiKey('')).toBe(false);
   });
 });

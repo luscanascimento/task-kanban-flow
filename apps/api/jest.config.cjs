@@ -16,5 +16,9 @@ module.exports = {
     ],
   },
   transformIgnorePatterns: ['/node_modules/\\.pnpm/(?!(@fastify\\+|fastify@|avvio@|cookie@))'],
+  // buildTestApp() registers the whole plugin stack, and @fastify/swagger-ui
+  // resolves its static bundle lazily; on a cold or contended run that alone
+  // can exceed Jest's 5s default and tear the suite down mid-import.
+  testTimeout: 30_000,
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.spec.ts', '!src/main.ts', '!src/**/index.ts'],
 };
