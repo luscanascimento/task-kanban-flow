@@ -76,9 +76,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: |
-            apps/web/dist
-            apps/admin/dist
+          path: apps/web/dist
           retention-days: 7
 
   e2e:
@@ -125,14 +123,5 @@ jobs:
           file: apps/web/Dockerfile
           push: false
           tags: tkf/web:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Build admin image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/admin/Dockerfile
-          push: false
-          tags: tkf/admin:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
