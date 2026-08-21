@@ -2,7 +2,7 @@
   "name": "task-kanban-flow",
   "version": "0.0.0",
   "private": true,
-  "description": "Enterprise-grade kanban task management platform built with Angular 21, Turborepo, and Clean Architecture.",
+  "description": "Multi-tenant kanban with an AES-256-GCM secrets vault, scoped API keys and a hardened Fastify + SQLite backend. Angular 21 + Turborepo.",
   "engines": {
     "node": ">=20.11.0",
     "pnpm": ">=9.0.0"
