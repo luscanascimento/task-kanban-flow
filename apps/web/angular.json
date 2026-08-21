@@ -21,8 +21,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               { "glob": "favicon.ico", "input": "public" },
-              { "glob": "mockServiceWorker.js", "input": "public" },
-              { "glob": "**/*", "input": "src/assets", "output": "/assets" }
+              { "glob": "mockServiceWorker.js", "input": "public" }
             ],
             "styles": ["../../packages/design-tokens/dist/tokens.css", "src/styles.scss"],
             "scripts": []
