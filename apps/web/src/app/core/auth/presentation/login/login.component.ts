@@ -14,7 +14,7 @@ import { AuthStore } from '../auth-store';
   imports: [ReactiveFormsModule, RouterLink, InputComponent, ButtonComponent],
   template: `
     <div class="tkf-auth-card">
-      <h1 class="tkf-auth-card__title">Entrar</h1>
+      <h1 class="tkf-auth-card__title">Sign in</h1>
 
       @if (store.error()) {
         <p class="tkf-auth-card__error" role="alert">{{ store.error() }}</p>
@@ -27,44 +27,46 @@ import { AuthStore } from '../auth-store';
             tkf-input
             type="email"
             formControlName="email"
-            placeholder="seu@email.com"
+            placeholder="you@example.com"
             [invalid]="emailInvalid"
             [describedBy]="emailInvalid ? 'login-email-error' : ''"
           />
           @if (emailInvalid) {
-            <span id="login-email-error" class="tkf-auth-card__hint">Informe um email válido.</span>
+            <span id="login-email-error" class="tkf-auth-card__hint"
+              >Enter a valid email address.</span
+            >
           }
         </label>
 
         <label class="tkf-auth-card__field">
-          <span>Senha</span>
+          <span>Password</span>
           <input
             tkf-input
             type="password"
             formControlName="password"
-            placeholder="Sua senha"
+            placeholder="Your password"
             [invalid]="passwordInvalid"
             [describedBy]="passwordInvalid ? 'login-password-error' : ''"
           />
           @if (passwordInvalid) {
             <span id="login-password-error" class="tkf-auth-card__hint"
-              >Mínimo de 6 caracteres.</span
+              >At least 6 characters.</span
             >
           }
         </label>
 
         <button tkf-button type="submit" [disabled]="store.isLoading()">
           @if (store.isLoading()) {
-            Carregando...
+            Signing in…
           } @else {
-            Entrar
+            Sign in
           }
         </button>
       </form>
 
       <p class="tkf-auth-card__footer">
-        Não tem conta?
-        <a routerLink="/auth/register">Cadastre-se</a>
+        No account yet?
+        <a routerLink="/auth/register">Create one</a>
       </p>
     </div>
   `,

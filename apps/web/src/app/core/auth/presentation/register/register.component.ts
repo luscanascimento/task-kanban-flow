@@ -14,7 +14,7 @@ import { AuthStore } from '../auth-store';
   imports: [ReactiveFormsModule, RouterLink, InputComponent, ButtonComponent],
   template: `
     <div class="tkf-auth-card">
-      <h1 class="tkf-auth-card__title">Criar conta</h1>
+      <h1 class="tkf-auth-card__title">Create account</h1>
 
       @if (store.error()) {
         <p class="tkf-auth-card__error" role="alert">{{ store.error() }}</p>
@@ -22,19 +22,17 @@ import { AuthStore } from '../auth-store';
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="tkf-auth-card__form">
         <label class="tkf-auth-card__field">
-          <span>Nome</span>
+          <span>Name</span>
           <input
             tkf-input
             type="text"
             formControlName="displayName"
-            placeholder="Seu nome"
+            placeholder="Your name"
             [invalid]="displayNameInvalid"
             [describedBy]="displayNameInvalid ? 'register-name-error' : ''"
           />
           @if (displayNameInvalid) {
-            <span id="register-name-error" class="tkf-auth-card__hint"
-              >Mínimo de 2 caracteres.</span
-            >
+            <span id="register-name-error" class="tkf-auth-card__hint">At least 2 characters.</span>
           }
         </label>
 
@@ -44,46 +42,46 @@ import { AuthStore } from '../auth-store';
             tkf-input
             type="email"
             formControlName="email"
-            placeholder="seu@email.com"
+            placeholder="you@example.com"
             [invalid]="emailInvalid"
             [describedBy]="emailInvalid ? 'register-email-error' : ''"
           />
           @if (emailInvalid) {
             <span id="register-email-error" class="tkf-auth-card__hint"
-              >Informe um email válido.</span
+              >Enter a valid email address.</span
             >
           }
         </label>
 
         <label class="tkf-auth-card__field">
-          <span>Senha</span>
+          <span>Password</span>
           <input
             tkf-input
             type="password"
             formControlName="password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="At least 6 characters"
             [invalid]="passwordInvalid"
             [describedBy]="passwordInvalid ? 'register-password-error' : ''"
           />
           @if (passwordInvalid) {
             <span id="register-password-error" class="tkf-auth-card__hint"
-              >Mínimo de 6 caracteres.</span
+              >At least 6 characters.</span
             >
           }
         </label>
 
         <button tkf-button type="submit" [disabled]="store.isLoading()">
           @if (store.isLoading()) {
-            Criando conta...
+            Creating account…
           } @else {
-            Cadastrar
+            Sign up
           }
         </button>
       </form>
 
       <p class="tkf-auth-card__footer">
-        Já tem conta?
-        <a routerLink="/auth/login">Entrar</a>
+        Already have an account?
+        <a routerLink="/auth/login">Sign in</a>
       </p>
     </div>
   `,

@@ -5,8 +5,6 @@
     "paths": {
       "@tkf/ui": ["./packages/ui/src/index.ts"],
       "@tkf/ui/*": ["./packages/ui/src/lib/*"],
-      "@tkf/api-client": ["./packages/api-client/src/index.ts"],
-      "@tkf/api-client/*": ["./packages/api-client/src/lib/*"],
       "@tkf/shared-types": ["./packages/shared-types/src/index.ts"],
       "@tkf/shared-types/*": ["./packages/shared-types/src/lib/*"],
       "@tkf/shared-utils": ["./packages/shared-utils/src/index.ts"],

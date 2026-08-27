@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS clients (
   phone      TEXT,
   notes      TEXT,
   color      TEXT,
+  owner_id   TEXT REFERENCES users(id) ON DELETE CASCADE,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

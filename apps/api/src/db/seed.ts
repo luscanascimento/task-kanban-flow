@@ -48,13 +48,17 @@ export async function seedDatabase(db: Db, env: Env): Promise<void> {
   repos.teams.addMember(team.id, ana.id, 'member');
   repos.teams.addMember(team.id, bruno.id, 'admin');
 
-  const acme = repos.clients.create(newId('cli'), {
+  const acme = repos.clients.create(newId('cli'), demo.id, {
     name: 'Acme Corp',
     company: 'Acme Corporation',
     email: 'ops@acme.example',
     color: '#0ea5e9',
   });
-  repos.clients.create(newId('cli'), { name: 'Globex', company: 'Globex Inc.', color: '#f59e0b' });
+  repos.clients.create(newId('cli'), demo.id, {
+    name: 'Globex',
+    company: 'Globex Inc.',
+    color: '#f59e0b',
+  });
 
   const board = repos.boards.create(newId('brd'), demo.id, {
     teamId: team.id,

@@ -6,4 +6,3 @@ export * from './infrastructure/jwt.service';
 export * from './infrastructure/auth-http.interceptor';
 export * from './presentation/auth-store';
 export * from './presentation/auth.guard';
-export * from './presentation/has-role.directive';

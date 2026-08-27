@@ -4,8 +4,8 @@ import { type Page, expect, test } from '@playwright/test';
 async function login(page: Page): Promise<void> {
   await page.goto('/auth/login');
   await page.getByRole('textbox', { name: 'Email' }).fill('demo@example.com');
-  await page.getByRole('textbox', { name: 'Senha' }).fill('password123');
-  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.getByRole('textbox', { name: 'Password' }).fill('password123');
+  await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/teams$/);
 }
 

@@ -160,13 +160,19 @@ Every error is a consistent JSON shape:
 }
 ```
 
-| Status | `code`             | Meaning                              |
-| ------ | ------------------ | ------------------------------------ |
-| 400    | `validation_error` | Body/params failed schema validation |
-| 401    | `invalid_api_key`  | Missing, unknown, or revoked key     |
-| 403    | `forbidden`        | Read key attempted a write           |
-| 404    | `not_found`        | Resource does not exist              |
-| 429    | `rate_limited`     | Too many requests                    |
+| Status | `code`             | Meaning                                                                       |
+| ------ | ------------------ | ----------------------------------------------------------------------------- |
+| 400    | `validation_error` | Body/params failed schema validation                                          |
+| 401    | `invalid_api_key`  | Missing, unknown, or revoked key                                              |
+| 403    | `forbidden`        | Read key attempted a write, or the team role is too low (`insufficient_role`) |
+| 404    | `not_found`        | Resource does not exist **or belongs to another user**                        |
+| 429    | `rate_limited`     | Too many requests                                                             |
+
+Every request is scoped to the key's owner: you only ever see the teams you
+belong to, the boards in those teams (or you were added to), your own clients,
+and the columns, tasks and secrets under those boards. Anything else answers
+`404` rather than `403`, so the API never confirms that another tenant's id
+exists.
 
 Input is validated and sanitised server-side (unknown fields are stripped,
 types/lengths enforced), and all database access uses parameterized statements,

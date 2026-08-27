@@ -47,12 +47,23 @@ function memberToDto(row: BoardMemberRow): BoardMemberDto {
   return { user, role: row.role as BoardMemberDto['role'], joinedAt: row.joined_at };
 }
 
+/**
+ * A board is reachable by a user when they are a member of its team or an
+ * explicit member of the board itself. Every read and write below is filtered
+ * by this predicate in SQL, so a caller can never touch another tenant's data.
+ * Placeholders: (userId, userId).
+ */
+const REACHABLE = `(b.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?)
+   OR b.id IN (SELECT board_id FROM board_members WHERE user_id = ?))`;
+
 export interface BoardsRepo {
-  list(teamId?: string): BoardDto[];
-  get(id: string): BoardDto | undefined;
+  list(userId: string, teamId?: string): BoardDto[];
+  get(userId: string, id: string): BoardDto | undefined;
+  /** True when the user may read/write the board — the guard for columns, tasks and secrets. */
+  canAccess(userId: string, boardId: string): boolean;
   create(id: string, ownerId: string, input: CreateBoardRequestDto): BoardDto;
-  update(id: string, input: UpdateBoardRequestDto): BoardDto | undefined;
-  remove(id: string): boolean;
+  update(userId: string, id: string, input: UpdateBoardRequestDto): BoardDto | undefined;
+  remove(userId: string, id: string): boolean;
   addMember(boardId: string, userId: string, role: BoardMemberDto['role']): void;
 }
 
@@ -64,9 +75,17 @@ export function createBoardsRepo(db: Db): BoardsRepo {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const byId = db.prepare<[string]>(`SELECT * FROM boards WHERE id = ?`);
-  const listAll = db.prepare(`SELECT * FROM boards ORDER BY created_at`);
-  const listByTeam = db.prepare<[string]>(
-    `SELECT * FROM boards WHERE team_id = ? ORDER BY created_at`,
+  const listForUser = db.prepare<[string, string]>(
+    `SELECT b.* FROM boards b WHERE ${REACHABLE} ORDER BY b.created_at`,
+  );
+  const listForUserByTeam = db.prepare<[string, string, string]>(
+    `SELECT b.* FROM boards b WHERE ${REACHABLE} AND b.team_id = ? ORDER BY b.created_at`,
+  );
+  const byIdForUser = db.prepare<[string, string, string]>(
+    `SELECT b.* FROM boards b WHERE b.id = ? AND ${REACHABLE}`,
+  );
+  const reachable = db.prepare<[string, string, string]>(
+    `SELECT 1 AS ok FROM boards b WHERE b.id = ? AND ${REACHABLE}`,
   );
   const del = db.prepare<[string]>(`DELETE FROM boards WHERE id = ?`);
   const membersFor = db.prepare<[string]>(
@@ -98,13 +117,20 @@ export function createBoardsRepo(db: Db): BoardsRepo {
   }
 
   return {
-    list(teamId) {
-      const rows = (teamId ? listByTeam.all(teamId) : listAll.all()) as BoardRow[];
+    list(userId, teamId) {
+      const rows = (
+        teamId === undefined
+          ? listForUser.all(userId, userId)
+          : listForUserByTeam.all(userId, userId, teamId)
+      ) as BoardRow[];
       return rows.map(toDto);
     },
-    get(id) {
-      const row = byId.get(id) as BoardRow | undefined;
+    get(userId, id) {
+      const row = byIdForUser.get(id, userId, userId) as BoardRow | undefined;
       return row ? toDto(row) : undefined;
+    },
+    canAccess(userId, boardId) {
+      return reachable.get(boardId, userId, userId) !== undefined;
     },
     create(id, ownerId, input) {
       const ts = nowIso();
@@ -122,8 +148,8 @@ export function createBoardsRepo(db: Db): BoardsRepo {
       upsertMember.run(id, ownerId, 'admin', ts);
       return toDto(byId.get(id) as BoardRow);
     },
-    update(id, input) {
-      const existing = byId.get(id) as BoardRow | undefined;
+    update(userId, id, input) {
+      const existing = byIdForUser.get(id, userId, userId) as BoardRow | undefined;
       if (!existing) {
         return undefined;
       }
@@ -141,7 +167,10 @@ export function createBoardsRepo(db: Db): BoardsRepo {
       );
       return toDto(byId.get(id) as BoardRow);
     },
-    remove(id) {
+    remove(userId, id) {
+      if (!reachable.get(id, userId, userId)) {
+        return false;
+      }
       return del.run(id).changes > 0;
     },
     addMember(boardId, userId, role) {

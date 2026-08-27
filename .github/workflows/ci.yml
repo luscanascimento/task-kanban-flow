@@ -125,3 +125,12 @@ jobs:
           tags: tkf/web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Build api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: tkf/api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -3,6 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { newId } from '../db/client.js';
 import { notFound } from '../http/errors.js';
 import { getPrincipal } from '../http/principal.js';
+import { requireBoard, requireColumn, requireTask, requireTeamRole } from '../http/access.js';
 
 const priority = Type.Union([
   Type.Literal('lowest'),
@@ -34,11 +35,13 @@ export function registerBoardRoutes(app: App): void {
   app.get(
     '/',
     { schema: { querystring: Type.Object({ teamId: Type.Optional(Type.String()) }) } },
-    async (request) => ({ items: app.repos.boards.list(request.query.teamId) }),
+    async (request) => ({
+      items: app.repos.boards.list(getPrincipal(request).userId, request.query.teamId),
+    }),
   );
 
   app.get('/:boardId', { schema: { params: boardIdParam } }, async (request) => {
-    const board = app.repos.boards.get(request.params.boardId);
+    const board = app.repos.boards.get(getPrincipal(request).userId, request.params.boardId);
     if (!board) {
       throw notFound('Board not found');
     }
@@ -64,6 +67,8 @@ export function registerBoardRoutes(app: App): void {
     },
     async (request, reply) => {
       const b = request.body;
+      // Any member of the team may open a board in it.
+      requireTeamRole(app, request, b.teamId, ['owner', 'admin', 'member']);
       const board = app.repos.boards.create(newId('brd'), getPrincipal(request).userId, {
         teamId: b.teamId,
         title: b.title,
@@ -93,7 +98,11 @@ export function registerBoardRoutes(app: App): void {
       },
     },
     async (request) => {
-      const board = app.repos.boards.update(request.params.boardId, request.body);
+      const board = app.repos.boards.update(
+        getPrincipal(request).userId,
+        request.params.boardId,
+        request.body,
+      );
       if (!board) {
         throw notFound('Board not found');
       }
@@ -105,7 +114,7 @@ export function registerBoardRoutes(app: App): void {
     '/:boardId',
     { ...write, schema: { params: boardIdParam } },
     async (request, reply) => {
-      if (!app.repos.boards.remove(request.params.boardId)) {
+      if (!app.repos.boards.remove(getPrincipal(request).userId, request.params.boardId)) {
         throw notFound('Board not found');
       }
       reply.status(204).send();
@@ -113,9 +122,10 @@ export function registerBoardRoutes(app: App): void {
   );
 
   // Columns (nested under a board).
-  app.get('/:boardId/columns', { schema: { params: boardIdParam } }, async (request) => ({
-    items: app.repos.columns.listByBoard(request.params.boardId),
-  }));
+  app.get('/:boardId/columns', { schema: { params: boardIdParam } }, async (request) => {
+    requireBoard(app, request, request.params.boardId);
+    return { items: app.repos.columns.listByBoard(request.params.boardId) };
+  });
 
   app.post(
     '/:boardId/columns',
@@ -135,6 +145,7 @@ export function registerBoardRoutes(app: App): void {
     },
     async (request, reply) => {
       const b = request.body;
+      requireBoard(app, request, request.params.boardId);
       const column = app.repos.columns.create(newId('col'), {
         boardId: request.params.boardId,
         title: b.title,
@@ -163,15 +174,23 @@ export function registerBoardRoutes(app: App): void {
       },
     },
     async (request) => {
+      const boardId = request.params.boardId;
+      requireBoard(app, request, boardId);
       const ordered = request.body.orderedIds ?? request.body.orderedColumnIds ?? [];
-      return { items: app.repos.columns.reorder(request.params.boardId, ordered) };
+      for (const id of ordered) {
+        if (requireColumn(app, request, id).boardId !== boardId) {
+          throw notFound('Column not found');
+        }
+      }
+      return { items: app.repos.columns.reorder(boardId, ordered) };
     },
   );
 
   // Tasks (nested under a board).
-  app.get('/:boardId/tasks', { schema: { params: boardIdParam } }, async (request) => ({
-    items: app.repos.tasks.listByBoard(request.params.boardId),
-  }));
+  app.get('/:boardId/tasks', { schema: { params: boardIdParam } }, async (request) => {
+    requireBoard(app, request, request.params.boardId);
+    return { items: app.repos.tasks.listByBoard(request.params.boardId) };
+  });
 
   app.post(
     '/:boardId/tasks',
@@ -194,6 +213,10 @@ export function registerBoardRoutes(app: App): void {
     },
     async (request, reply) => {
       const b = request.body;
+      requireBoard(app, request, request.params.boardId);
+      if (requireColumn(app, request, b.columnId).boardId !== request.params.boardId) {
+        throw notFound('Column not found');
+      }
       const task = app.repos.tasks.create(newId('tsk'), {
         boardId: request.params.boardId,
         columnId: b.columnId,
@@ -213,13 +236,9 @@ export function registerTaskRoutes(app: App): void {
   app.addHook('preHandler', app.requirePrincipal);
   const write = { preHandler: app.requireWrite };
 
-  app.get('/:id', { schema: { params: idParam } }, async (request) => {
-    const task = app.repos.tasks.get(request.params.id);
-    if (!task) {
-      throw notFound('Task not found');
-    }
-    return task;
-  });
+  app.get('/:id', { schema: { params: idParam } }, async (request) =>
+    requireTask(app, request, request.params.id),
+  );
 
   app.patch(
     '/:id',
@@ -244,6 +263,13 @@ export function registerTaskRoutes(app: App): void {
       },
     },
     async (request) => {
+      const existing = requireTask(app, request, request.params.id);
+      if (
+        request.body.columnId !== undefined &&
+        requireColumn(app, request, request.body.columnId).boardId !== existing.boardId
+      ) {
+        throw notFound('Column not found');
+      }
       const task = app.repos.tasks.update(request.params.id, request.body);
       if (!task) {
         throw notFound('Task not found');
@@ -265,6 +291,10 @@ export function registerTaskRoutes(app: App): void {
       },
     },
     async (request) => {
+      const existing = requireTask(app, request, request.params.id);
+      if (requireColumn(app, request, request.body.targetColumnId).boardId !== existing.boardId) {
+        throw notFound('Column not found');
+      }
       const task = app.repos.tasks.move(
         request.params.id,
         request.body.targetColumnId,
@@ -295,6 +325,7 @@ export function registerTaskRoutes(app: App): void {
       },
     },
     async (request, reply) => {
+      requireTask(app, request, request.params.id);
       const task = app.repos.tasks.addAttachment(request.params.id, request.body);
       if (!task) {
         throw notFound('Task not found');
@@ -310,6 +341,7 @@ export function registerTaskRoutes(app: App): void {
       schema: { params: Type.Object({ id: Type.String(), attachmentId: Type.String() }) },
     },
     async (request) => {
+      requireTask(app, request, request.params.id);
       const task = app.repos.tasks.removeAttachment(request.params.id, request.params.attachmentId);
       if (!task) {
         throw notFound('Task not found');
@@ -319,6 +351,7 @@ export function registerTaskRoutes(app: App): void {
   );
 
   app.delete('/:id', { ...write, schema: { params: idParam } }, async (request, reply) => {
+    requireTask(app, request, request.params.id);
     if (!app.repos.tasks.remove(request.params.id)) {
       throw notFound('Task not found');
     }

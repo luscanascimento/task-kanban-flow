@@ -2,6 +2,7 @@ import { Type } from '@sinclair/typebox';
 import type { App } from '../types.js';
 import { newId } from '../db/client.js';
 import { notFound } from '../http/errors.js';
+import { requireBoard, requireColumn } from '../http/access.js';
 
 /**
  * Flat column routes mounted at /columns — create/update/delete by id. The
@@ -32,6 +33,7 @@ export function registerColumnRoutes(app: App): void {
     },
     async (request, reply) => {
       const b = request.body;
+      requireBoard(app, request, b.boardId);
       const column = app.repos.columns.create(newId('col'), {
         boardId: b.boardId,
         title: b.title,
@@ -60,6 +62,7 @@ export function registerColumnRoutes(app: App): void {
       },
     },
     async (request) => {
+      requireColumn(app, request, request.params.id);
       const column = app.repos.columns.update(request.params.id, request.body);
       if (!column) {
         throw notFound('Column not found');
@@ -69,6 +72,7 @@ export function registerColumnRoutes(app: App): void {
   );
 
   app.delete('/:id', { ...write, schema: { params: idParam } }, async (request, reply) => {
+    requireColumn(app, request, request.params.id);
     if (!app.repos.columns.remove(request.params.id)) {
       throw notFound('Column not found');
     }

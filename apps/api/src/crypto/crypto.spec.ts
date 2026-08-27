@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { hashPassword, verifyPassword } from './password';
+import { dummyPasswordHash, hashPassword, verifyPassword } from './password';
 import { encryptSecret, decryptSecret } from './encryption';
 import { generateApiKey, hashApiKey, hashesEqual, looksLikeApiKey } from './api-key';
 
@@ -29,6 +29,17 @@ describe('password hashing (Argon2id + pepper)', () => {
 
   it('never throws on a malformed stored hash', async () => {
     expect(await verifyPassword('not-a-hash', 'x', PEPPER)).toBe(false);
+  });
+
+  it('exposes a real, parseable dummy hash for the unknown-email login path', async () => {
+    const dummy = await dummyPasswordHash();
+    // Must be a genuine Argon2id hash with the same cost parameters as a real
+    // one — a placeholder string would fail to parse and return instantly,
+    // which is exactly the timing signal this is meant to erase.
+    expect(dummy).toMatch(/^\$argon2id\$v=19\$m=19456,t=2,p=1\$/);
+    expect(await verifyPassword(dummy, 'anything', PEPPER)).toBe(false);
+    // Same promise every call: hashed once per process, not per login.
+    expect(await dummyPasswordHash()).toBe(dummy);
   });
 });
 

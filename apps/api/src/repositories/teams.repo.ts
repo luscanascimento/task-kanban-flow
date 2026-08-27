@@ -45,8 +45,12 @@ function memberToDto(row: MemberRow): TeamMemberDto {
 }
 
 export interface TeamsRepo {
-  list(): TeamDto[];
-  get(id: string): TeamDto | undefined;
+  /** Only the teams the user belongs to. */
+  list(userId: string): TeamDto[];
+  /** The team, only if the user belongs to it (otherwise indistinguishable from missing). */
+  get(userId: string, id: string): TeamDto | undefined;
+  /** The user's role in the team, or undefined when they are not a member. */
+  roleOf(userId: string, teamId: string): TeamRole | undefined;
   create(id: string, ownerId: string, input: CreateTeamRequestDto): TeamDto;
   update(id: string, input: UpdateTeamRequestDto): TeamDto | undefined;
   remove(id: string): boolean;
@@ -59,7 +63,17 @@ export function createTeamsRepo(db: Db): TeamsRepo {
     `INSERT INTO teams (id, name, description, owner_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
   );
   const byId = db.prepare<[string]>(`SELECT * FROM teams WHERE id = ?`);
-  const listAll = db.prepare(`SELECT * FROM teams ORDER BY name COLLATE NOCASE`);
+  const listForUser = db.prepare<[string]>(
+    `SELECT t.* FROM teams t JOIN team_members tm ON tm.team_id = t.id
+     WHERE tm.user_id = ? ORDER BY t.name COLLATE NOCASE`,
+  );
+  const byIdForUser = db.prepare<[string, string]>(
+    `SELECT t.* FROM teams t JOIN team_members tm ON tm.team_id = t.id
+     WHERE t.id = ? AND tm.user_id = ?`,
+  );
+  const roleFor = db.prepare<[string, string]>(
+    `SELECT role FROM team_members WHERE team_id = ? AND user_id = ?`,
+  );
   const del = db.prepare<[string]>(`DELETE FROM teams WHERE id = ?`);
   const boardCount = db.prepare<[string]>(`SELECT COUNT(*) AS n FROM boards WHERE team_id = ?`);
   const membersFor = db.prepare<[string]>(
@@ -93,12 +107,16 @@ export function createTeamsRepo(db: Db): TeamsRepo {
   }
 
   return {
-    list() {
-      return (listAll.all() as TeamRow[]).map(toDto);
+    list(userId) {
+      return (listForUser.all(userId) as TeamRow[]).map(toDto);
     },
-    get(id) {
-      const row = byId.get(id) as TeamRow | undefined;
+    get(userId, id) {
+      const row = byIdForUser.get(id, userId) as TeamRow | undefined;
       return row ? toDto(row) : undefined;
+    },
+    roleOf(userId, teamId) {
+      const row = roleFor.get(teamId, userId) as { role: string } | undefined;
+      return row ? (row.role as TeamRole) : undefined;
     },
     create(id, ownerId, input) {
       const ts = nowIso();

@@ -35,12 +35,13 @@ const SELECT = `
   SELECT c.*, (SELECT COUNT(*) FROM boards b WHERE b.client_id = c.id) AS board_count
   FROM clients c`;
 
+/** Clients belong to the user who registered them; every query filters on that. */
 export interface ClientsRepo {
-  list(): ClientDto[];
-  get(id: string): ClientDto | undefined;
-  create(id: string, input: CreateClientRequestDto): ClientDto;
-  update(id: string, input: UpdateClientRequestDto): ClientDto | undefined;
-  remove(id: string): boolean;
+  list(ownerId: string): ClientDto[];
+  get(ownerId: string, id: string): ClientDto | undefined;
+  create(id: string, ownerId: string, input: CreateClientRequestDto): ClientDto;
+  update(ownerId: string, id: string, input: UpdateClientRequestDto): ClientDto | undefined;
+  remove(ownerId: string, id: string): boolean;
 }
 
 export function createClientsRepo(db: Db): ClientsRepo {
@@ -55,24 +56,27 @@ export function createClientsRepo(db: Db): ClientsRepo {
       string | null,
       string,
       string,
+      string,
     ]
   >(
-    `INSERT INTO clients (id, name, company, email, phone, notes, color, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO clients (id, name, company, email, phone, notes, color, owner_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  const listAll = db.prepare(`${SELECT} ORDER BY c.name COLLATE NOCASE`);
-  const byId = db.prepare<[string]>(`${SELECT} WHERE c.id = ?`);
-  const del = db.prepare<[string]>(`DELETE FROM clients WHERE id = ?`);
+  const listForOwner = db.prepare<[string]>(
+    `${SELECT} WHERE c.owner_id = ? ORDER BY c.name COLLATE NOCASE`,
+  );
+  const byIdForOwner = db.prepare<[string, string]>(`${SELECT} WHERE c.id = ? AND c.owner_id = ?`);
+  const del = db.prepare<[string, string]>(`DELETE FROM clients WHERE id = ? AND owner_id = ?`);
 
   return {
-    list() {
-      return (listAll.all() as ClientRow[]).map(toDto);
+    list(ownerId) {
+      return (listForOwner.all(ownerId) as ClientRow[]).map(toDto);
     },
-    get(id) {
-      const row = byId.get(id) as ClientRow | undefined;
+    get(ownerId, id) {
+      const row = byIdForOwner.get(id, ownerId) as ClientRow | undefined;
       return row ? toDto(row) : undefined;
     },
-    create(id, input) {
+    create(id, ownerId, input) {
       const ts = nowIso();
       insert.run(
         id,
@@ -82,13 +86,14 @@ export function createClientsRepo(db: Db): ClientsRepo {
         input.phone ?? null,
         input.notes ?? null,
         input.color ?? null,
+        ownerId,
         ts,
         ts,
       );
-      return toDto(byId.get(id) as ClientRow);
+      return toDto(byIdForOwner.get(id, ownerId) as ClientRow);
     },
-    update(id, input) {
-      const existing = byId.get(id) as ClientRow | undefined;
+    update(ownerId, id, input) {
+      const existing = byIdForOwner.get(id, ownerId) as ClientRow | undefined;
       if (!existing) {
         return undefined;
       }
@@ -101,7 +106,7 @@ export function createClientsRepo(db: Db): ClientsRepo {
         color: input.color ?? existing.color,
       };
       db.prepare(
-        `UPDATE clients SET name = ?, company = ?, email = ?, phone = ?, notes = ?, color = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE clients SET name = ?, company = ?, email = ?, phone = ?, notes = ?, color = ?, updated_at = ? WHERE id = ? AND owner_id = ?`,
       ).run(
         merged.name,
         merged.company,
@@ -111,11 +116,12 @@ export function createClientsRepo(db: Db): ClientsRepo {
         merged.color,
         nowIso(),
         id,
+        ownerId,
       );
-      return toDto(byId.get(id) as ClientRow);
+      return toDto(byIdForOwner.get(id, ownerId) as ClientRow);
     },
-    remove(id) {
-      return del.run(id).changes > 0;
+    remove(ownerId, id) {
+      return del.run(id, ownerId).changes > 0;
     },
   };
 }

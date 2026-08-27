@@ -2,7 +2,7 @@ import type { FastifyReply } from 'fastify';
 import type { App } from '../types.js';
 import { Type } from '@sinclair/typebox';
 import type { LoginResponseDto, UserDto } from '@tkf/shared-types';
-import { hashPassword, verifyPassword } from '../crypto/password.js';
+import { dummyPasswordHash, hashPassword, verifyPassword } from '../crypto/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../crypto/tokens.js';
 import { newId } from '../db/client.js';
 import { badRequest, conflict, unauthorized } from '../http/errors.js';
@@ -92,14 +92,14 @@ export function registerAuthRoutes(app: App): void {
     async (request, reply) => {
       const { email, password } = request.body;
       const found = app.repos.users.findByEmail(email);
-      // Same error + always run a verify to reduce user-enumeration timing signal.
-      const ok = found
-        ? await verifyPassword(found.passwordHash, password, app.env.passwordPepper)
-        : await verifyPassword(
-            '$argon2id$v=19$m=19456,t=2,p=1$0000$0000',
-            password,
-            app.env.passwordPepper,
-          );
+      // Same error + always run a full Argon2 verify (against a real hash of a
+      // random secret when the account is unknown) so the response time does
+      // not reveal whether the email exists.
+      const ok = await verifyPassword(
+        found ? found.passwordHash : await dummyPasswordHash(),
+        password,
+        app.env.passwordPepper,
+      );
       if (!found || !ok) {
         throw unauthorized('Invalid email or password', 'invalid_credentials');
       }

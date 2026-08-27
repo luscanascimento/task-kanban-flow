@@ -1,5 +1,5 @@
 import { hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
 /**
  * Password hashing: Argon2id (memory-hard) with a per-hash random salt handled
@@ -26,6 +26,20 @@ function pepper(password: string, pepperSecret: string): string {
 
 export async function hashPassword(password: string, pepperSecret: string): Promise<string> {
   return argonHash(pepper(password, pepperSecret), ARGON2_OPTIONS);
+}
+
+let dummyHash: Promise<string> | undefined;
+
+/**
+ * A real Argon2id hash of a random secret, computed once per process. The login
+ * route verifies against it when the email is unknown: because it is a valid,
+ * parseable hash with the same cost parameters as a real one, the failed login
+ * takes the same time whether or not the account exists — which is the whole
+ * point of the user-enumeration mitigation. Nothing can ever match it.
+ */
+export function dummyPasswordHash(): Promise<string> {
+  dummyHash ??= argonHash(randomBytes(32).toString('base64'), ARGON2_OPTIONS);
+  return dummyHash;
 }
 
 export async function verifyPassword(

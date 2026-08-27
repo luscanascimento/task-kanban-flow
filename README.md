@@ -16,29 +16,29 @@
 
 ## Stack
 
-| Layer         | Choice                                                                                                |
-| ------------- | ----------------------------------------------------------------------------------------------------- |
-| Framework     | Angular **21** (standalone components, signals, zoneless)                                             |
-| State         | [`@ngrx/signals`](https://ngrx.io/guide/signals) per feature                                          |
-| Routing       | Angular Router (lazy-loaded, view transitions)                                                        |
-| Forms         | Angular Reactive Forms                                                                                |
-| i18n          | `@angular/localize` polyfill + `i18n` markers in templates — locale extraction pending                |
-| Build         | Angular CLI + `@angular-devkit/build-angular`                                                         |
-| Monorepo      | [Turborepo](https://turbo.build/repo) + **pnpm** workspaces                                           |
-| Language      | TypeScript **strict** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                      |
-| Lint          | ESLint 9 flat config (`@tkf/eslint-config`)                                                           |
-| Format        | Prettier                                                                                              |
-| Pre-commit    | Husky + lint-staged + commitlint (Conventional Commits)                                               |
-| Unit tests    | Jest 30 + [`jest-preset-angular`](https://thymikee.github.io/jest-preset-angular/) + Testing Library  |
-| E2E           | Playwright (3-shard parallelism in CI)                                                                |
-| Storybook     | Storybook 10 (component catalog in `@tkf/ui`)                                                         |
-| Mock API      | [MSW 2](https://mswjs.io) (browser + node)                                                            |
-| Design tokens | Style Dictionary → CSS variables + typed JS                                                           |
-| Theming       | Light/Dark via `[data-theme]` on `<html>`                                                             |
-| Containers    | Multi-stage Dockerfile → nginx-alpine                                                                 |
-| CI/CD         | GitHub Actions (pnpm cache + Turbo cache)                                                             |
-| Observability | Sentry SDK wired (DSN-gated)                                                                          |
-| Security      | JWT + refresh cookie; team RBAC (`owner` / `admin` / `member`); API keys scoped `read` / `read_write` |
+| Layer         | Choice                                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework     | Angular **21** (standalone components, signals, zoneless)                                                                                        |
+| State         | [`@ngrx/signals`](https://ngrx.io/guide/signals) per feature                                                                                     |
+| Routing       | Angular Router (lazy-loaded, view transitions)                                                                                                   |
+| Forms         | Angular Reactive Forms                                                                                                                           |
+| i18n          | `@angular/localize` polyfill + `i18n` markers in templates — locale extraction pending                                                           |
+| Build         | Angular CLI + `@angular-devkit/build-angular`                                                                                                    |
+| Monorepo      | [Turborepo](https://turbo.build/repo) + **pnpm** workspaces                                                                                      |
+| Language      | TypeScript **strict** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)                                                                 |
+| Lint          | ESLint 9 flat config (`@tkf/eslint-config`)                                                                                                      |
+| Format        | Prettier                                                                                                                                         |
+| Pre-commit    | Husky + lint-staged + commitlint (Conventional Commits)                                                                                          |
+| Unit tests    | Jest 30 + [`jest-preset-angular`](https://thymikee.github.io/jest-preset-angular/) + Testing Library                                             |
+| E2E           | Playwright (3-shard parallelism in CI)                                                                                                           |
+| Storybook     | Storybook 10 (component catalog in `@tkf/ui`)                                                                                                    |
+| Mock API      | [MSW 2](https://mswjs.io) (browser + node)                                                                                                       |
+| Design tokens | Style Dictionary → CSS variables + typed JS                                                                                                      |
+| Theming       | Light/Dark via `[data-theme]` on `<html>`                                                                                                        |
+| Containers    | Multi-stage Dockerfiles (web → nginx-alpine, api → Node) wired together by `docker-compose.yml`                                                  |
+| CI/CD         | GitHub Actions (pnpm cache + Turbo cache)                                                                                                        |
+| Observability | Sentry SDK wired (DSN-gated)                                                                                                                     |
+| Security      | JWT + refresh cookie; per-principal data scoping on every route; team RBAC (`owner` / `admin` / `member`); API keys scoped `read` / `read_write` |
 
 ---
 
@@ -89,12 +89,11 @@ task-kanban-flow/
 │   │   ├── angular.json
 │   │   ├── Dockerfile
 │   │   └── playwright.config.ts
-│   ├── api/                    # Security-hardened REST backend (Fastify + SQLite, port 3000)
+│   ├── api/                    # Security-hardened REST backend (Fastify + SQLite, port 3000, has its own Dockerfile)
 │   └── mcp/                    # MCP server — lets AI agents drive the kanban via the API
 │
 ├── packages/
 │   ├── ui/                     # Design system (tkf-button, tkf-loading, …)
-│   ├── api-client/             # Typed HttpClient wrappers
 │   ├── shared-types/           # Pure-TS DTOs (DOM-free)
 │   ├── shared-utils/           # Pure-TS helpers + Jest tests
 │   ├── design-tokens/          # Style Dictionary → CSS/JS tokens
@@ -102,7 +101,7 @@ task-kanban-flow/
 │   └── ts-config/              # Shared tsconfig bases
 │
 ├── docker/
-│   └── nginx/default.conf      # SPA-fallback nginx config used by Dockerfile
+│   └── nginx/default.conf      # SPA fallback + /api/ proxy_pass to the api service
 │
 ├── docs/
 │   ├── architecture.md         # 17 ADs + layer rules
@@ -140,18 +139,19 @@ task-kanban-flow/
 | `pnpm format`                     | Prettier write across the workspace                                |
 | `pnpm --filter @tkf/ui storybook` | Start Storybook for `@tkf/ui` (port 6006)                          |
 | `pnpm clean`                      | Remove all `node_modules` and build artifacts                      |
-| `docker compose build`            | Build the web Docker image                                         |
-| `docker compose up`               | Serve web on `:4200`                                               |
+| `docker compose build`            | Build the web + api Docker images                                  |
+| `docker compose up`               | Serve the full stack on `:4200` (nginx proxies `/api/` to the api) |
 
 ---
 
 ## Architecture in one breath
 
-One Angular app, one Fastify API and one MCP server share seven packages.
+One Angular app, one Fastify API and one MCP server share six packages.
 Every feature inside the web app follows
 **Clean Architecture**: `domain → application → infrastructure → presentation`.
-State is **per-feature NgRx Signal Store**. HTTP goes through typed
-**`@tkf/api-client`** classes that MSW intercepts in dev/test. Themes are
+State is **per-feature NgRx Signal Store**. HTTP goes through each feature's
+typed `infrastructure/http-*.repository.ts`, which MSW intercepts in dev/test.
+Themes are
 **CSS variables emitted by Style Dictionary**. Tests: **Jest unit**,
 **Playwright E2E**. CI: **GitHub Actions with sharded E2E + Docker builds**.
 
@@ -192,10 +192,10 @@ modal, loading, toast) documented in **Storybook** (`pnpm --filter @tkf/ui story
 
 ### Tests
 
-`pnpm test` runs **207** Jest tests: 117 in `apps/web`, 38 in `apps/api`
+`pnpm test` runs **213** Jest tests: 117 in `apps/web`, 44 in `apps/api`
 (crypto unit tests + `app.spec.ts`, which boots the real Fastify instance
-against an in-memory SQLite and drives it through `app.inject`), 48 in
-`@tkf/shared-utils` and 4 in `apps/mcp`. `@tkf/ui` is covered by Storybook,
+against an in-memory SQLite and drives it through `app.inject`, including the
+tenant-isolation suite), 48 in `@tkf/shared-utils` and 4 in `apps/mcp`. `@tkf/ui` is covered by Storybook,
 not Jest. Playwright covers the browser flows in `apps/web/e2e`.
 
 ---

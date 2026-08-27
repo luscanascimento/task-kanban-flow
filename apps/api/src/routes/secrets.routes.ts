@@ -2,6 +2,7 @@ import type { App } from '../types.js';
 import { Type } from '@sinclair/typebox';
 import { newId } from '../db/client.js';
 import { notFound } from '../http/errors.js';
+import { requireBoard, requireSecret } from '../http/access.js';
 
 /**
  * Secrets are board-scoped credentials. The API exposes ONLY metadata — the
@@ -23,9 +24,10 @@ export function registerSecretRoutes(app: App): void {
   app.addHook('preHandler', app.requirePrincipal);
   const write = { preHandler: app.requireWrite };
 
-  app.get('/boards/:boardId/secrets', { schema: { params: boardIdParam } }, async (request) => ({
-    items: app.repos.secrets.listByBoard(request.params.boardId),
-  }));
+  app.get('/boards/:boardId/secrets', { schema: { params: boardIdParam } }, async (request) => {
+    requireBoard(app, request, request.params.boardId);
+    return { items: app.repos.secrets.listByBoard(request.params.boardId) };
+  });
 
   app.post(
     '/boards/:boardId/secrets',
@@ -49,6 +51,7 @@ export function registerSecretRoutes(app: App): void {
       },
     },
     async (request, reply) => {
+      requireBoard(app, request, request.params.boardId);
       const secret = app.repos.secrets.create(newId('sec'), {
         boardId: request.params.boardId,
         ...request.body,
@@ -79,6 +82,7 @@ export function registerSecretRoutes(app: App): void {
       },
     },
     async (request) => {
+      requireSecret(app, request, request.params.id);
       const secret = app.repos.secrets.update(request.params.id, request.body);
       if (!secret) {
         throw notFound('Secret not found');
@@ -88,6 +92,7 @@ export function registerSecretRoutes(app: App): void {
   );
 
   app.delete('/secrets/:id', { ...write, schema: { params: idParam } }, async (request, reply) => {
+    requireSecret(app, request, request.params.id);
     if (!app.repos.secrets.remove(request.params.id)) {
       throw notFound('Secret not found');
     }

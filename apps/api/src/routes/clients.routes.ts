@@ -2,6 +2,7 @@ import type { App } from '../types.js';
 import { Type } from '@sinclair/typebox';
 import { newId } from '../db/client.js';
 import { notFound } from '../http/errors.js';
+import { getPrincipal } from '../http/principal.js';
 
 const idParam = Type.Object({ id: Type.String() });
 const optStr = (max: number) => Type.Optional(Type.String({ maxLength: max }));
@@ -10,10 +11,12 @@ export function registerClientRoutes(app: App): void {
   app.addHook('preHandler', app.requirePrincipal);
   const write = { preHandler: app.requireWrite };
 
-  app.get('/', async () => ({ items: app.repos.clients.list() }));
+  app.get('/', async (request) => ({
+    items: app.repos.clients.list(getPrincipal(request).userId),
+  }));
 
   app.get('/:id', { schema: { params: idParam } }, async (request) => {
-    const client = app.repos.clients.get(request.params.id);
+    const client = app.repos.clients.get(getPrincipal(request).userId, request.params.id);
     if (!client) {
       throw notFound('Client not found');
     }
@@ -21,10 +24,11 @@ export function registerClientRoutes(app: App): void {
   });
 
   app.get('/:id/boards', { schema: { params: idParam } }, async (request) => {
-    if (!app.repos.clients.get(request.params.id)) {
+    const userId = getPrincipal(request).userId;
+    if (!app.repos.clients.get(userId, request.params.id)) {
       throw notFound('Client not found');
     }
-    const boards = app.repos.boards.list().filter((b) => b.clientId === request.params.id);
+    const boards = app.repos.boards.list(userId).filter((b) => b.clientId === request.params.id);
     return { items: boards };
   });
 
@@ -41,14 +45,20 @@ export function registerClientRoutes(app: App): void {
   );
 
   app.post('/', { ...write, schema: { body: bodySchema } }, async (request, reply) => {
-    reply.status(201).send(app.repos.clients.create(newId('cli'), request.body));
+    reply
+      .status(201)
+      .send(app.repos.clients.create(newId('cli'), getPrincipal(request).userId, request.body));
   });
 
   app.patch(
     '/:id',
     { ...write, schema: { params: idParam, body: Type.Partial(bodySchema) } },
     async (request) => {
-      const client = app.repos.clients.update(request.params.id, request.body);
+      const client = app.repos.clients.update(
+        getPrincipal(request).userId,
+        request.params.id,
+        request.body,
+      );
       if (!client) {
         throw notFound('Client not found');
       }
@@ -57,7 +67,7 @@ export function registerClientRoutes(app: App): void {
   );
 
   app.delete('/:id', { ...write, schema: { params: idParam } }, async (request, reply) => {
-    if (!app.repos.clients.remove(request.params.id)) {
+    if (!app.repos.clients.remove(getPrincipal(request).userId, request.params.id)) {
       throw notFound('Client not found');
     }
     reply.status(204).send();

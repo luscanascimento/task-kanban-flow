@@ -1,5 +1,19 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
 import { buildTestApp, registerUser } from './test/harness';
+
+/** One HTTP call in a `[method, url, payload?]` table. */
+type Call = readonly [string, string, object?];
+
+/** `app.inject` for a table row — the payload key is omitted when there is none. */
+async function send(
+  app: FastifyInstance,
+  [method, url, payload]: Call,
+  headers: Record<string, string>,
+): Promise<LightMyRequestResponse> {
+  const base = { method: method as 'POST', url, headers };
+  const options: InjectOptions = payload === undefined ? base : { ...base, payload };
+  return app.inject(options);
+}
 
 describe('API integration', () => {
   let app: FastifyInstance;
@@ -139,7 +153,7 @@ describe('API integration', () => {
 
       // Build the fixture with the read_write key so the read key has real
       // resources to be denied against (a 403 on a missing id proves nothing).
-      const post = async <T>(url: string, payload: unknown): Promise<T> =>
+      const post = async <T>(url: string, payload: object): Promise<T> =>
         (await app.inject({ method: 'POST', url, headers: rw, payload })).json() as T;
 
       const team = await post<{ id: string }>('/api/v1/teams', { name: 'Scope' });
@@ -166,7 +180,7 @@ describe('API integration', () => {
       // Payloads are schema-valid on purpose: Fastify validates before the
       // preHandler runs, so an invalid body would 400 and never reach the
       // scope check we are asserting on.
-      const writes: ReadonlyArray<[string, string, unknown?]> = [
+      const writes: readonly Call[] = [
         ['POST', '/api/v1/teams', { name: 'nope' }],
         ['PATCH', `/api/v1/teams/${team.id}`, { name: 'nope' }],
         ['DELETE', `/api/v1/teams/${team.id}`],
@@ -199,13 +213,9 @@ describe('API integration', () => {
         ['DELETE', `/api/v1/secrets/${secret.id}`],
       ];
 
-      for (const [method, url, payload] of writes) {
-        const res = await app.inject({
-          method: method as 'POST',
-          url,
-          headers: ro,
-          ...(payload === undefined ? {} : { payload }),
-        });
+      for (const call of writes) {
+        const [method, url] = call;
+        const res = await send(app, call, ro);
         expect({ method, url, status: res.statusCode }).toEqual({
           method,
           url,
@@ -372,6 +382,248 @@ describe('API integration', () => {
         headers: h,
       });
       expect(JSON.stringify(list.json())).not.toContain('do-not-leak');
+    });
+  });
+
+  describe('tenant isolation', () => {
+    interface Fixture {
+      readonly a: { authorization: string };
+      readonly b: { authorization: string };
+      readonly bUserId: string;
+      readonly team: string;
+      readonly board: string;
+      readonly column: string;
+      readonly task: string;
+      readonly client: string;
+      readonly secret: string;
+    }
+
+    /** User A owns a full object graph; user B is an unrelated tenant. */
+    async function twoTenants(prefix: string): Promise<Fixture> {
+      const userA = await registerUser(app, `${prefix}-a@example.com`);
+      const userB = await registerUser(app, `${prefix}-b@example.com`);
+      const a = { authorization: `Bearer ${userA.accessToken}` };
+      const b = { authorization: `Bearer ${userB.accessToken}` };
+
+      const post = async <T>(url: string, payload: object): Promise<T> =>
+        (await app.inject({ method: 'POST', url, headers: a, payload })).json() as T;
+
+      const team = await post<{ id: string }>('/api/v1/teams', { name: `${prefix} team` });
+      const board = await post<{ id: string }>('/api/v1/boards', {
+        teamId: team.id,
+        title: 'Private board',
+      });
+      const column = await post<{ id: string }>(`/api/v1/boards/${board.id}/columns`, {
+        title: 'Backlog',
+        position: 0,
+      });
+      const task = await post<{ id: string }>(`/api/v1/boards/${board.id}/tasks`, {
+        columnId: column.id,
+        title: 'Private task',
+      });
+      const client = await post<{ id: string }>('/api/v1/clients', { name: 'Private client' });
+      const secret = await post<{ id: string }>(`/api/v1/boards/${board.id}/secrets`, {
+        platform: 'AWS',
+        label: 'root',
+        authType: 'password',
+        secret: 'do-not-leak',
+      });
+
+      return {
+        a,
+        b,
+        bUserId: userB.userId,
+        team: team.id,
+        board: board.id,
+        column: column.id,
+        task: task.id,
+        client: client.id,
+        secret: secret.id,
+      };
+    }
+
+    it("never lists another user's teams, boards or clients", async () => {
+      const f = await twoTenants('list');
+      for (const url of ['/api/v1/teams', '/api/v1/boards', '/api/v1/clients']) {
+        const res = await app.inject({ method: 'GET', url, headers: f.b });
+        expect({ url, status: res.statusCode }).toEqual({ url, status: 200 });
+        expect({ url, items: (res.json() as { items: unknown[] }).items }).toEqual({
+          url,
+          items: [],
+        });
+      }
+    });
+
+    it("answers 404 (never 403) when reading another user's resources", async () => {
+      const f = await twoTenants('read');
+      const reads = [
+        `/api/v1/teams/${f.team}`,
+        `/api/v1/teams/${f.team}/boards`,
+        `/api/v1/boards/${f.board}`,
+        `/api/v1/boards/${f.board}/columns`,
+        `/api/v1/boards/${f.board}/tasks`,
+        `/api/v1/boards/${f.board}/secrets`,
+        `/api/v1/tasks/${f.task}`,
+        `/api/v1/clients/${f.client}`,
+        `/api/v1/clients/${f.client}/boards`,
+      ];
+      for (const url of reads) {
+        const res = await app.inject({ method: 'GET', url, headers: f.b });
+        // 404, not 403: a 403 would confirm the id exists.
+        expect({ url, status: res.statusCode }).toEqual({ url, status: 404 });
+        expect(JSON.stringify(res.json())).not.toContain('do-not-leak');
+      }
+    });
+
+    it("cannot mutate another user's resources, and leaves them intact", async () => {
+      const f = await twoTenants('write');
+      const writes: readonly Call[] = [
+        ['PATCH', `/api/v1/teams/${f.team}`, { name: 'pwned' }],
+        ['DELETE', `/api/v1/teams/${f.team}`],
+        ['POST', `/api/v1/teams/${f.team}/members`, { email: 'x@example.com', role: 'admin' }],
+        ['DELETE', `/api/v1/teams/${f.team}/members/${f.bUserId}`],
+        ['POST', '/api/v1/boards', { teamId: f.team, title: 'pwned' }],
+        ['PATCH', `/api/v1/boards/${f.board}`, { title: 'pwned' }],
+        ['DELETE', `/api/v1/boards/${f.board}`],
+        ['POST', `/api/v1/boards/${f.board}/columns`, { title: 'pwned', position: 1 }],
+        ['POST', '/api/v1/columns', { boardId: f.board, title: 'pwned', position: 1 }],
+        ['PATCH', `/api/v1/columns/${f.column}`, { title: 'pwned' }],
+        ['DELETE', `/api/v1/columns/${f.column}`],
+        ['POST', `/api/v1/boards/${f.board}/columns/reorder`, { orderedIds: [f.column] }],
+        ['POST', `/api/v1/boards/${f.board}/tasks`, { columnId: f.column, title: 'pwned' }],
+        ['PATCH', `/api/v1/tasks/${f.task}`, { title: 'pwned' }],
+        ['POST', `/api/v1/tasks/${f.task}/move`, { targetColumnId: f.column, targetPosition: 0 }],
+        [
+          'POST',
+          `/api/v1/tasks/${f.task}/attachments`,
+          { name: 'a.png', mimeType: 'image/png', url: 'data:image/png;base64,AA==', sizeBytes: 2 },
+        ],
+        ['DELETE', `/api/v1/tasks/${f.task}`],
+        ['PATCH', `/api/v1/clients/${f.client}`, { name: 'pwned' }],
+        ['DELETE', `/api/v1/clients/${f.client}`],
+        [
+          'POST',
+          `/api/v1/boards/${f.board}/secrets`,
+          { platform: 'AWS', label: 'pwned', authType: 'password', secret: 'pwned' },
+        ],
+        ['PATCH', `/api/v1/secrets/${f.secret}`, { label: 'pwned' }],
+        ['DELETE', `/api/v1/secrets/${f.secret}`],
+      ];
+
+      for (const call of writes) {
+        const [method, url] = call;
+        const res = await send(app, call, f.b);
+        expect({ method, url, status: res.statusCode }).toEqual({ method, url, status: 404 });
+      }
+
+      // Everything user A owns is untouched.
+      const board = await app.inject({
+        method: 'GET',
+        url: `/api/v1/boards/${f.board}`,
+        headers: f.a,
+      });
+      expect(board.json()).toMatchObject({ id: f.board, title: 'Private board' });
+      const task = await app.inject({
+        method: 'GET',
+        url: `/api/v1/tasks/${f.task}`,
+        headers: f.a,
+      });
+      expect(task.json()).toMatchObject({ id: f.task, title: 'Private task' });
+      const secrets = await app.inject({
+        method: 'GET',
+        url: `/api/v1/boards/${f.board}/secrets`,
+        headers: f.a,
+      });
+      expect((secrets.json() as { items: { label: string }[] }).items).toEqual([
+        expect.objectContaining({ label: 'root' }),
+      ]);
+    });
+
+    it('cannot move a task into a board it does not own', async () => {
+      const f = await twoTenants('move');
+      const own = await twoTenants('move-own');
+      // `own.b` is a stranger to both graphs; use user A of the second fixture,
+      // who legitimately owns a task, and try to park it in f's column.
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/tasks/${own.task}/move`,
+        headers: own.a,
+        payload: { targetColumnId: f.column, targetPosition: 0 },
+      });
+      expect(res.statusCode).toBe(404);
+      const still = await app.inject({
+        method: 'GET',
+        url: `/api/v1/tasks/${own.task}`,
+        headers: own.a,
+      });
+      expect(still.json()).toMatchObject({ columnId: own.column });
+    });
+
+    it('enforces the team role: a member reads and creates boards but cannot administer', async () => {
+      const f = await twoTenants('rbac');
+      const invited = await app.inject({
+        method: 'POST',
+        url: `/api/v1/teams/${f.team}/members`,
+        headers: f.a,
+        payload: { email: 'rbac-b@example.com', role: 'member' },
+      });
+      expect(invited.statusCode).toBe(200);
+
+      // A member sees the team…
+      const read = await app.inject({
+        method: 'GET',
+        url: `/api/v1/teams/${f.team}`,
+        headers: f.b,
+      });
+      expect(read.statusCode).toBe(200);
+
+      // …and may open a board in it…
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/v1/boards',
+        headers: f.b,
+        payload: { teamId: f.team, title: 'Member board' },
+      });
+      expect(created.statusCode).toBe(201);
+
+      // …but cannot rename it, delete it or manage members (403 — membership is
+      // no longer secret at this point, only the role is insufficient).
+      const denied: readonly Call[] = [
+        ['PATCH', `/api/v1/teams/${f.team}`, { name: 'renamed' }],
+        ['DELETE', `/api/v1/teams/${f.team}`],
+        [
+          'POST',
+          `/api/v1/teams/${f.team}/members`,
+          { email: 'rbac-a@example.com', role: 'member' },
+        ],
+      ];
+      for (const call of denied) {
+        const [method, url] = call;
+        const res = await send(app, call, f.b);
+        expect({ method, url, status: res.statusCode }).toEqual({ method, url, status: 403 });
+        expect(res.json()).toMatchObject({ code: 'insufficient_role' });
+      }
+
+      // An admin can rename, but only the owner can delete.
+      await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/teams/${f.team}/members/${f.bUserId}`,
+        headers: f.a,
+        payload: { role: 'admin' },
+      });
+      const renamed = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/teams/${f.team}`,
+        headers: f.b,
+        payload: { name: 'renamed by admin' },
+      });
+      expect(renamed.statusCode).toBe(200);
+      const deleted = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/teams/${f.team}`,
+        headers: f.b,
+      });
+      expect(deleted.statusCode).toBe(403);
     });
   });
 });

@@ -19,6 +19,14 @@ export function openDb(path: string): Db {
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
   db.exec(SCHEMA_SQL);
+  // `CREATE TABLE IF NOT EXISTS` cannot add a column to a database created by
+  // an older build, and there is no migration runner here: the additive ALTER
+  // is idempotent because SQLite errors on a duplicate column name.
+  try {
+    db.exec(`ALTER TABLE clients ADD COLUMN owner_id TEXT`);
+  } catch {
+    // Column already present.
+  }
   return db;
 }
 

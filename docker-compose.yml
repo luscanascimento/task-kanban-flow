@@ -1,8 +1,35 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: tkf/api:dev
+    environment:
+      # Leave the secrets empty and the API generates ephemeral dev ones on
+      # boot (with a loud warning). Set NODE_ENV=production plus real values in
+      # a .env file for anything beyond a local demo — the API then refuses to
+      # start without them. See apps/api/.env.example.
+      NODE_ENV: ${NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: '3000'
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:4200}
+      DATABASE_PATH: /data/tkf.db
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      PASSWORD_PEPPER: ${PASSWORD_PEPPER:-}
+      APIKEY_PEPPER: ${APIKEY_PEPPER:-}
+      SECRETS_ENC_KEY: ${SECRETS_ENC_KEY:-}
+    volumes: ['api-data:/data']
+    restart: unless-stopped
+
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     image: tkf/web:dev
     ports: ['4200:80']
+    depends_on: [api]
     restart: unless-stopped
+
+volumes:
+  api-data:

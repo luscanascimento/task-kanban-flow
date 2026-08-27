@@ -26,7 +26,7 @@ internal packages under the `@tkf/*` npm scope.
 └─────────────────────────────┬───────────────────────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  @tkf/ui  @tkf/api-client  @tkf/design-tokens               │
+│  @tkf/ui  @tkf/design-tokens                                │
 │  @tkf/shared-types  @tkf/shared-utils                       │
 │  @tkf/eslint-config  @tkf/ts-config                         │
 └─────────────────────────────────────────────────────────────┘
@@ -68,11 +68,12 @@ Communication across features uses facades, never selectors. The
 classic global NgRx store is intentionally avoided — signals give
 equivalent type-safety with less boilerplate.
 
-### AD-05 · MSW as transport mock; `api-client` stays real
+### AD-05 · MSW as transport mock; the app code stays real
 
-MSW intercepts at the network layer. `@tkf/api-client` is fully typed
-and oblivious to whether MSW is active. Toggle via `environment.useMockApi`.
-Same code path runs against a real backend when one exists.
+MSW intercepts at the network layer, so the feature repositories
+(`infrastructure/http-*.repository.ts`) are oblivious to whether it is active.
+Toggle via `environment.useMockApi`. The same code path runs against
+`apps/api`.
 
 ### AD-06 · Jest 30 (SWC transformer) for unit/integration
 
@@ -117,15 +118,21 @@ app builds and runs in source (pt-BR) text only. Extraction
 ### AD-13 · JWT + Refresh + team RBAC
 
 `core/auth` ships with: `JwtService`, `AuthHttpInterceptor`, `AuthStore`,
-`AuthGuard`, `HasRoleDirective`. Authorisation that the API actually enforces
-is team membership + team role: `owner | admin | member`
-(`apps/api/src/routes/teams.routes.ts`). API keys carry an orthogonal scope,
-`read | read_write`, checked by the `requireWrite` preHandler.
+`AuthGuard`. Authorisation is enforced server-side only: every repository query
+is scoped to the authenticated principal (teams by membership, boards by
+team/board membership, clients by owner, columns/tasks/secrets through their
+board), and team administration is gated by the team role
+`owner | admin | member` (`apps/api/src/http/access.ts`). A cross-tenant read
+returns `404`, not `403`, so existence is never confirmed. API keys carry an
+orthogonal scope, `read | read_write`, checked by the `requireWrite` preHandler.
 
-### AD-14 · Multi-stage Docker → nginx-alpine
+### AD-14 · Multi-stage Docker → nginx-alpine + API service
 
-`apps/web` ships a `Dockerfile`; the final image is nginx-alpine with hashed
-static assets and SPA fallback. Sub-50 MB target.
+`apps/web` ships a `Dockerfile` whose final image is nginx-alpine with hashed
+static assets and SPA fallback; `apps/api` ships one that builds with tsup and
+runs on a plain Node image. `docker compose up` starts both and nginx
+`proxy_pass`es `/api/` to the API container, which is what the production build
+expects (`environment.prod.ts` uses the relative base URL `/api/v1`).
 
 ### AD-15 · GitHub Actions with pnpm cache + sharded E2E
 
