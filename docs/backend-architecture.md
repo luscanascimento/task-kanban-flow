@@ -73,7 +73,9 @@ JSON columns. See `apps/api/src/db/schema.ts` for the DDL. Notable columns:
 - `secrets.secret_encrypted` — AES-256-GCM envelope, never the plaintext.
 - `team_members.role` / `board_members` — the only source of authorization; a
   board is reachable iff the caller is in its team or in `board_members`.
-- `refresh_tokens` — rotation store enabling logout + refresh-reuse revocation.
+- `refresh_tokens` — rotation store enabling logout and reuse detection: a
+  refresh presents a `jti` that is revoked on use, so replaying an already
+  rotated token revokes every live token for that user (`auth.routes.ts`).
 
 ---
 
@@ -87,7 +89,7 @@ JSON columns. See `apps/api/src/db/schema.ts` for the DDL. Notable columns:
 | **Password storage** | Argon2id (19 MiB, t=2) + per-hash random salt + server-side **pepper** (HMAC pre-hash)                                                                                                                                                                                                                                     |
 | **Secrets at rest**  | AES-256-GCM with per-record IV + auth tag; API returns metadata only                                                                                                                                                                                                                                                       |
 | **API keys**         | Shown once; stored as HMAC-SHA256(pepper); constant-time compare; soft-delete revocation                                                                                                                                                                                                                                   |
-| **Sessions**         | Short-lived JWT access + rotating refresh in an httpOnly, SameSite=strict, signed cookie                                                                                                                                                                                                                                   |
+| **Sessions**         | Short-lived JWT access + rotating refresh in an httpOnly, SameSite=strict, signed cookie. Replaying a rotated refresh token revokes the whole family                                                                                                                                                                       |
 | **CSRF**             | Refresh cookie is httpOnly + **SameSite=strict** (a cross-site page can't send it); body-based bearer refresh isn't ambient. `GET /auth/csrf` issues a token for stricter cookie-only setups.                                                                                                                              |
 | **XSS (headers)**    | Helmet with a strict Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`                                                                                                                                                                                                               |
 | **CORS**             | Locked to configured web origin(s); credentials allowed only for them                                                                                                                                                                                                                                                      |
@@ -114,9 +116,9 @@ pnpm --filter @tkf/api typecheck   # tsc --noEmit
 
 Tests run against an in-memory SQLite via `buildApp({ env, db })` and Fastify's
 `app.inject()` — no ports, no network. They cover the security-critical paths:
-weak-password rejection, input sanitisation, API-key create→use→revoke→401
-(the `deleted_at` rule), scope enforcement, secret-value non-exposure, and
-tenant isolation (one user can neither read nor mutate another's team, board,
+weak-password rejection, input sanitisation, refresh-token reuse detection,
+API-key create→use→revoke→401 (the `deleted_at` rule), scope enforcement,
+secret-value non-exposure, and tenant isolation (one user can neither read nor mutate another's team, board,
 column, task, client or secret, and gets `404` rather than `403`).
 
 ---

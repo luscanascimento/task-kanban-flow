@@ -86,9 +86,9 @@ Playwright contexts, enabling deterministic API fixtures.
 
 ### AD-08 · Storybook in `@tkf/ui` only
 
-The design system is the natural consumer. Co-located `.stories.ts` per
-component. _(Initial wiring ships in Phase 1; this phase only ships the
-component code.)_
+The design system is the natural consumer. Stories are co-located as
+`.stories.ts` next to the component, but coverage is partial: 8 of the 12
+components have one (field, loading, select and textarea do not).
 
 ### AD-09 · Shared ESLint flat configs (`@tkf/eslint-config`)
 
@@ -142,7 +142,10 @@ Concurrency group cancels superseded runs.
 ### AD-16 · Sentry SDK inert by default
 
 `@sentry/angular` is installed and `Sentry.init` runs only when
-`SENTRY_DSN` is non-empty. Enabling in prod is a single env var change.
+`environment.sentry.dsn` is non-empty. It is empty in both `environment.ts` and
+`environment.prod.ts`, so the SDK is inert in this repo and the app uses a
+console `ErrorHandler`. Enabling it means putting a real DSN in
+`environment.prod.ts` and rebuilding — the DSN is not read from an env var.
 
 ### AD-17 · No features in Phase 0 (superseded)
 

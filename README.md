@@ -3,8 +3,8 @@
 > Multi-tenant kanban with a **per-board secrets vault (AES-256-GCM,
 > versioned envelope)**, **scoped API keys** (HMAC-SHA256 + server-side pepper,
 > stored hashed, compared in constant time) and a **hardened Fastify backend**
-> (CSP via Helmet, origin allow-list CORS, per-IP rate limiting, CSRF-protected
-> refresh-cookie flow).
+> (CSP via Helmet, origin allow-list CORS, per-IP rate limiting, httpOnly
+> `SameSite=strict` refresh cookie with rotation + reuse detection).
 >
 > Angular 21 (standalone, signals, zoneless) · Fastify + SQLite · Turborepo ·
 > Clean Architecture. Personal portfolio project.
@@ -31,13 +31,13 @@
 | Pre-commit    | Husky + lint-staged + commitlint (Conventional Commits)                                                                                          |
 | Unit tests    | Jest 30 + [`jest-preset-angular`](https://thymikee.github.io/jest-preset-angular/) + Testing Library                                             |
 | E2E           | Playwright (3-shard parallelism in CI)                                                                                                           |
-| Storybook     | Storybook 10 (component catalog in `@tkf/ui`)                                                                                                    |
+| Storybook     | Storybook 10 (partial component catalog in `@tkf/ui` — 8 of 12 components)                                                                       |
 | Mock API      | [MSW 2](https://mswjs.io) (browser + node)                                                                                                       |
 | Design tokens | Style Dictionary → CSS variables + typed JS                                                                                                      |
 | Theming       | Light/Dark via `[data-theme]` on `<html>`                                                                                                        |
 | Containers    | Multi-stage Dockerfiles (web → nginx-alpine, api → Node) wired together by `docker-compose.yml`                                                  |
 | CI/CD         | GitHub Actions (pnpm cache + Turbo cache)                                                                                                        |
-| Observability | Sentry SDK wired (DSN-gated)                                                                                                                     |
+| Observability | Sentry SDK installed but **inert** — the DSN is empty in both environment files, so a console `ErrorHandler` is used (see AD-16)                 |
 | Security      | JWT + refresh cookie; per-principal data scoping on every route; team RBAC (`owner` / `admin` / `member`); API keys scoped `read` / `read_write` |
 
 ---
@@ -111,6 +111,7 @@ task-kanban-flow/
 │
 ├── .github/workflows/          # ci.yml, codeql.yml
 ├── .husky/                     # pre-commit, commit-msg
+├── LICENSE
 ├── eslint.config.mjs
 ├── turbo.json
 ├── pnpm-workspace.yaml
@@ -188,18 +189,25 @@ the row; the DTO already carries `name`, `mimeType`, `sizeBytes` and `url`, so
 
 The `@tkf/ui` design system ships 12 token-driven, accessible components
 (button, input, select, textarea, field, avatar, badge, card, skeleton,
-modal, loading, toast) documented in **Storybook** (`pnpm --filter @tkf/ui storybook`).
+modal, loading, toast). **8 of them have Storybook stories**
+(`pnpm --filter @tkf/ui storybook`): avatar, badge, button, card, input,
+modal, skeleton, toast. Field, loading, select and textarea are not documented
+there yet.
 
 ### Tests
 
-`pnpm test` runs **213** Jest tests: 117 in `apps/web`, 44 in `apps/api`
+`pnpm test` runs **214** Jest tests: 117 in `apps/web`, 45 in `apps/api`
 (crypto unit tests + `app.spec.ts`, which boots the real Fastify instance
 against an in-memory SQLite and drives it through `app.inject`, including the
-tenant-isolation suite), 48 in `@tkf/shared-utils` and 4 in `apps/mcp`. `@tkf/ui` is covered by Storybook,
-not Jest. Playwright covers the browser flows in `apps/web/e2e`.
+tenant-isolation suite), 48 in `@tkf/shared-utils` and 4 in `apps/mcp`.
+Playwright covers the browser flows in `apps/web/e2e`.
+
+**Gap:** `@tkf/ui` has **no unit tests at all** — its Jest project runs with
+`--passWithNoTests`. The components are exercised indirectly through the web
+app's specs and Storybook, which is not the same thing as being tested.
 
 ---
 
 ## License
 
-MIT — built by [Lucas Gabriel Ferreira do Nascimento](https://github.com/luscanascimento).
+[MIT](./LICENSE) — built by [Lucas Gabriel Ferreira do Nascimento](https://github.com/luscanascimento).
