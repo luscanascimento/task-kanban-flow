@@ -6,6 +6,11 @@ export interface RefreshTokensRepo {
   issue(input: { id: string; userId: string; expiresAt: string }): void;
   /** Active = exists, not revoked, not expired. */
   isActive(id: string): boolean;
+  /**
+   * Exists AND was explicitly revoked (by rotation or logout). Distinct from
+   * `!isActive`, which is also true for unknown and merely expired ids.
+   */
+  isRevoked(id: string): boolean;
   revoke(id: string): void;
   revokeAllForUser(userId: string): void;
 }
@@ -34,6 +39,10 @@ export function createRefreshTokensRepo(db: Db): RefreshTokensRepo {
         return false;
       }
       return new Date(row.expires_at).getTime() > Date.now();
+    },
+    isRevoked(id) {
+      const row = byId.get(id) as { revoked_at: string | null } | undefined;
+      return row !== undefined && row.revoked_at !== null;
     },
     revoke(id) {
       revokeOne.run(nowIso(), id);

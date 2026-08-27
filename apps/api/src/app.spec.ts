@@ -68,6 +68,31 @@ describe('API integration', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('revokes the whole refresh family when a rotated token is replayed', async () => {
+    const refresh = async (refreshToken: string): Promise<LightMyRequestResponse> =>
+      app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refreshToken } });
+
+    const registered = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: { email: 'replay@example.com', password: 'password123', displayName: 'Replay' },
+    });
+    const stolen = (registered.json() as { tokens: { refreshToken: string } }).tokens.refreshToken;
+
+    // Legitimate rotation: the stolen copy is now stale.
+    const rotated = await refresh(stolen);
+    expect(rotated.statusCode).toBe(200);
+    const current = (rotated.json() as { tokens: { refreshToken: string } }).tokens.refreshToken;
+
+    // The thief replays the stale copy.
+    const replayed = await refresh(stolen);
+    expect(replayed.statusCode).toBe(401);
+    expect(replayed.json()).toMatchObject({ code: 'inactive_refresh' });
+
+    // The replay must burn the victim's live token too, not just the stale one.
+    expect((await refresh(current)).statusCode).toBe(401);
+  });
+
   describe('API keys', () => {
     it('creates a key (shown once), uses it, then rejects it after revocation', async () => {
       const { accessToken } = await registerUser(app, 'keys@example.com');

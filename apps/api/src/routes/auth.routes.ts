@@ -138,6 +138,12 @@ export function registerAuthRoutes(app: App): void {
         throw unauthorized('Invalid refresh token', 'invalid_refresh');
       }
       if (!app.repos.refreshTokens.isActive(claims.jti)) {
+        // A cryptographically valid token whose jti was already rotated out is
+        // a replay: either the thief or the victim is holding a stale copy, and
+        // we cannot tell which. Revoke the whole family so both must re-login.
+        if (app.repos.refreshTokens.isRevoked(claims.jti)) {
+          app.repos.refreshTokens.revokeAllForUser(claims.sub);
+        }
         throw unauthorized('Refresh token expired or revoked', 'inactive_refresh');
       }
       const user = app.repos.users.findById(claims.sub);
