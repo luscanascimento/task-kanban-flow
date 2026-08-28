@@ -21,6 +21,23 @@ export function requireBoard(app: App, request: FastifyRequest, boardId: string)
   }
 }
 
+/**
+ * Board administrative actions (deleting the board, changing core settings) require
+ * the board owner, an explicit board admin, or a team owner/admin.
+ */
+export function requireBoardAdmin(app: App, request: FastifyRequest, boardId: string): void {
+  const userId = getPrincipal(request).userId;
+  if (!app.repos.boards.canAccess(userId, boardId)) {
+    throw notFound('Board not found');
+  }
+  if (!app.repos.boards.canAdmin(userId, boardId)) {
+    throw forbidden(
+      'This action requires board administrator or team administrator privileges',
+      'insufficient_role',
+    );
+  }
+}
+
 export function requireTask(app: App, request: FastifyRequest, taskId: string): TaskDto {
   const task = app.repos.tasks.get(taskId);
   if (!task || !app.repos.boards.canAccess(getPrincipal(request).userId, task.boardId)) {

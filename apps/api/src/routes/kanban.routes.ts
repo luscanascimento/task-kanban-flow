@@ -3,7 +3,13 @@ import { Type } from '@sinclair/typebox';
 import { newId } from '../db/client.js';
 import { notFound } from '../http/errors.js';
 import { getPrincipal } from '../http/principal.js';
-import { requireBoard, requireColumn, requireTask, requireTeamRole } from '../http/access.js';
+import {
+  requireBoard,
+  requireBoardAdmin,
+  requireColumn,
+  requireTask,
+  requireTeamRole,
+} from '../http/access.js';
 
 const priority = Type.Union([
   Type.Literal('lowest'),
@@ -98,6 +104,7 @@ export function registerBoardRoutes(app: App): void {
       },
     },
     async (request) => {
+      requireBoardAdmin(app, request, request.params.boardId);
       const board = app.repos.boards.update(
         getPrincipal(request).userId,
         request.params.boardId,
@@ -114,6 +121,7 @@ export function registerBoardRoutes(app: App): void {
     '/:boardId',
     { ...write, schema: { params: boardIdParam } },
     async (request, reply) => {
+      requireBoardAdmin(app, request, request.params.boardId);
       if (!app.repos.boards.remove(getPrincipal(request).userId, request.params.boardId)) {
         throw notFound('Board not found');
       }

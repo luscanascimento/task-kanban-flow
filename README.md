@@ -196,15 +196,12 @@ there yet.
 
 ### Tests
 
-`pnpm test` runs **214** Jest tests: 117 in `apps/web`, 45 in `apps/api`
+`pnpm test` runs **242** Jest tests across all projects: 117 in `apps/web`, 46 in `apps/api`
 (crypto unit tests + `app.spec.ts`, which boots the real Fastify instance
 against an in-memory SQLite and drives it through `app.inject`, including the
-tenant-isolation suite), 48 in `@tkf/shared-utils` and 4 in `apps/mcp`.
+tenant-isolation and RBAC board-admin suite), 48 in `@tkf/shared-utils`, 4 in `apps/mcp`,
+and 27 across 12 component test suites in `@tkf/ui`.
 Playwright covers the browser flows in `apps/web/e2e`.
-
-**Gap:** `@tkf/ui` has **no unit tests at all** — its Jest project runs with
-`--passWithNoTests`. The components are exercised indirectly through the web
-app's specs and Storybook, which is not the same thing as being tested.
 
 ---
 

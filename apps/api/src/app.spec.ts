@@ -650,5 +650,51 @@ describe('API integration', () => {
       });
       expect(deleted.statusCode).toBe(403);
     });
+
+    it('enforces board admin role on board deletion and modification', async () => {
+      const f = await twoTenants('board-rbac');
+      // Invite user B as a regular member to team
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/teams/${f.team}/members`,
+        headers: f.a,
+        payload: { email: 'board-rbac-b@example.com', role: 'member' },
+      });
+
+      // User A (team owner) created f.board in the team.
+      // User B (regular team member) can see User A's board...
+      const getRes = await app.inject({
+        method: 'GET',
+        url: `/api/v1/boards/${f.board}`,
+        headers: f.b,
+      });
+      expect(getRes.statusCode).toBe(200);
+
+      // ...but User B cannot delete or rename User A's board (403 insufficient_role)
+      const patchRes = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/boards/${f.board}`,
+        headers: f.b,
+        payload: { title: 'Hijacked Board' },
+      });
+      expect(patchRes.statusCode).toBe(403);
+      expect(patchRes.json()).toMatchObject({ code: 'insufficient_role' });
+
+      const delRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/boards/${f.board}`,
+        headers: f.b,
+      });
+      expect(delRes.statusCode).toBe(403);
+      expect(delRes.json()).toMatchObject({ code: 'insufficient_role' });
+
+      // User A (board & team owner) can delete the board successfully
+      const ownerDelRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/boards/${f.board}`,
+        headers: f.a,
+      });
+      expect(ownerDelRes.statusCode).toBe(204);
+    });
   });
 });

@@ -61,6 +61,8 @@ export interface BoardsRepo {
   get(userId: string, id: string): BoardDto | undefined;
   /** True when the user may read/write the board — the guard for columns, tasks and secrets. */
   canAccess(userId: string, boardId: string): boolean;
+  /** True when the user is board owner, board admin, or team owner/admin. */
+  canAdmin(userId: string, boardId: string): boolean;
   create(id: string, ownerId: string, input: CreateBoardRequestDto): BoardDto;
   update(userId: string, id: string, input: UpdateBoardRequestDto): BoardDto | undefined;
   remove(userId: string, id: string): boolean;
@@ -86,6 +88,14 @@ export function createBoardsRepo(db: Db): BoardsRepo {
   );
   const reachable = db.prepare<[string, string, string]>(
     `SELECT 1 AS ok FROM boards b WHERE b.id = ? AND ${REACHABLE}`,
+  );
+  const adminReachable = db.prepare<[string, string, string, string]>(
+    `SELECT 1 AS ok FROM boards b
+     WHERE b.id = ? AND (
+       b.owner_id = ?
+       OR b.id IN (SELECT board_id FROM board_members WHERE user_id = ? AND role = 'admin')
+       OR b.team_id IN (SELECT team_id FROM team_members WHERE user_id = ? AND role IN ('owner', 'admin'))
+     )`,
   );
   const del = db.prepare<[string]>(`DELETE FROM boards WHERE id = ?`);
   const membersFor = db.prepare<[string]>(
@@ -131,6 +141,9 @@ export function createBoardsRepo(db: Db): BoardsRepo {
     },
     canAccess(userId, boardId) {
       return reachable.get(boardId, userId, userId) !== undefined;
+    },
+    canAdmin(userId, boardId) {
+      return adminReachable.get(boardId, userId, userId, userId) !== undefined;
     },
     create(id, ownerId, input) {
       const ts = nowIso();

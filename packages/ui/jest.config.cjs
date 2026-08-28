@@ -1,14 +1,16 @@
 /** @type {import('jest').Config} */
-// The design-system package has no specs yet, so it uses the lightweight SWC
-// preset (fast, no Angular compiler). When component specs are added, switch to
-// jest-preset-angular's CJS preset like the apps do (see apps/web/jest.config.cjs).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { createCjsPreset } = require('jest-preset-angular/presets');
+
 module.exports = {
-  preset: '../../jest.preset.cjs',
-  testEnvironment: 'jsdom',
+  ...createCjsPreset({
+    tsconfig: '<rootDir>/tsconfig.spec.json',
+  }),
+  setupFilesAfterEnv: ['<rootDir>/src/jest.setup.ts'],
   rootDir: '.',
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
-  moduleFileExtensions: ['ts', 'js', 'html'],
   moduleNameMapper: {
+    tslib: 'tslib/tslib.es6.js',
     '^@tkf/(.*)$': '<rootDir>/../$1/src/index.ts',
   },
 };
